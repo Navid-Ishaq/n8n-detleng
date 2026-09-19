@@ -35,4 +35,11 @@ describe('public learning experience', () => {
     expect(friendlyAuthError('User already registered')).toMatch(/account already exists/i)
     expect(friendlyAuthError('Password should be at least 8 characters')).toMatch(/stronger password/i)
   })
+
+  it('protects a direct Lesson 01 route for unauthenticated learners', () => {
+    window.history.pushState({}, '', '/lessons/n8n-core')
+    render(<App />)
+    expect(screen.getByText(/Taking you to login/i)).toBeInTheDocument()
+    window.history.pushState({}, '', '/')
+  })
 })
