@@ -11,6 +11,10 @@ A practical learning platform for n8n AI Automation Engineering. The product is 
 
 The current implementation stage is the public experience. Supabase and Render values are intentionally not required yet.
 
+## GitHub Pages deployment
+
+The site is built and deployed by `.github/workflows/deploy-pages.yml`. GitHub Pages must use **GitHub Actions** as its publishing source; serving the repository root directly will expose the Vite source entry point instead of the compiled application.
+
 ## Local development
 
 ```bash
