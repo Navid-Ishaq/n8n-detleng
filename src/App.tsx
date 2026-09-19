@@ -1,9 +1,12 @@
 import { ArrowRight, Braces, Check, ChevronRight, CirclePlay, Menu, Network, ShieldCheck, Sparkles, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { capstones, lessons, levels } from './data/curriculum'
 import { Footer } from './components/Footer'
 import { AuthPage } from './components/AuthPage'
 import { safeReturnTo } from './lib/routing'
+import { useAuth } from './context/AuthContext'
+import { Dashboard } from './components/Dashboard'
+import { LessonPage } from './components/LessonPage'
 
 const interactionLabels = { webhook_lab: 'Live lab', self_run: 'Build lab', external_trigger: 'Field test', checklist: 'Ops lab', quiz_project: 'Project lab' }
 
@@ -13,13 +16,13 @@ function lessonHref(slug: string) {
 
 export function App() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { loading, user } = useAuth()
   const path = window.location.pathname.replace(/\/+$/, '') || '/'
-  if (path === '/login' || path === '/signup') return <AuthPage mode={path === '/login' ? 'login' : 'signup'} returnTo={safeReturnTo(window.location.search)} />
-  if (path.startsWith('/lessons/')) {
-    const returnTo = `${path}${window.location.search}${window.location.hash}`
-    window.location.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`)
-    return <main className="route-loading"><p>Taking you to login…</p></main>
-  }
+  const returnTo = safeReturnTo(window.location.search)
+  if (loading) return <main className="route-loading"><p>Loading your workspace…</p></main>
+  if (path === '/login' || path === '/signup') return user ? <RouteRedirect to={returnTo} label="Opening your workspace…" /> : <AuthPage mode={path === '/login' ? 'login' : 'signup'} returnTo={returnTo} />
+  if (path === '/dashboard') return user ? <Dashboard /> : <RouteRedirect to={`/login?returnTo=${encodeURIComponent('/dashboard')}`} label="Taking you to login…" />
+  if (path.startsWith('/lessons/')) return user ? <LessonPage slug={path.slice('/lessons/'.length)} /> : <RouteRedirect to={`/login?returnTo=${encodeURIComponent(`${path}${window.location.search}${window.location.hash}`)}`} label="Taking you to login…" />
   return (
     <div id="top">
       <header className="site-header">
@@ -69,4 +72,9 @@ export function App() {
       <Footer />
     </div>
   )
+}
+
+function RouteRedirect({ to, label }: { to: string; label: string }) {
+  useEffect(() => { window.location.replace(to) }, [to])
+  return <main className="route-loading"><p>{label}</p></main>
 }
