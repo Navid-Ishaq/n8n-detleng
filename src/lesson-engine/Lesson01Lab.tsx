@@ -28,7 +28,7 @@ export function Lesson01Lab() {
   const [saveState, setSaveState] = useState('')
   const [syncPending, setSyncPending] = useState(false)
   const [structureResult, setStructureResult] = useState<WorkflowValidation | null>(null)
-  const [highText, setHighText] = useState(''); const [normalText, setNormalText] = useState('')
+  const [highRouteChoice, setHighRouteChoice] = useState(''); const [normalRouteChoice, setNormalRouteChoice] = useState('')
   const [highFeedback, setHighFeedback] = useState<Feedback | null>(null); const [normalFeedback, setNormalFeedback] = useState<Feedback | null>(null)
   const [repairText, setRepairText] = useState(''); const [repairFeedback, setRepairFeedback] = useState<Feedback | null>(null)
   const [diagnosis, setDiagnosis] = useState('')
@@ -104,8 +104,9 @@ export function Lesson01Lab() {
   const stage = progress.viewedStage
 
   const canOpenStage = (id: string) => {
-    if (['understand', 'build', 'test', 'verify-structure', 'verify-output'].includes(id)) return true
-    if (id === 'break-it') return progress.highOutputPassed && progress.normalOutputPassed
+    if (['understand', 'build', 'test', 'verify-structure'].includes(id)) return true
+    if (id === 'verify-output') return progress.structurePassed
+    if (id === 'break-it') return progress.highRouteTestPassed && progress.normalRouteTestPassed
     if (id === 'debug') return progress.breakAttempted
     if (id === 'knowledge-check') return progress.diagnosisPassed && progress.repairedOutputPassed
     if (id === 'document') return progress.quizPassed
@@ -146,11 +147,21 @@ export function Lesson01Lab() {
     updateProgress({ structurePassed: result.passed, lastNeedsAttention: !result.passed, stageStates: { ...progress.stageStates, 'verify-structure': result.passed ? 'passed' : 'needs_attention' } })
   }
 
-  function verifyOutput(kind: 'high' | 'normal') {
-    const result = validateExecutionOutput(kind === 'high' ? highText : normalText, kind === 'high' ? 'escalated' : 'standard')
+  function verifyRoute(kind: 'high' | 'normal') {
+    const choice = kind === 'high' ? highRouteChoice : normalRouteChoice
+    const expected = kind === 'high' ? 'escalated' : 'standard'
+    const passed = progress.structurePassed && choice === expected
+    const result = {
+      passed,
+      message: passed
+        ? kind === 'high' ? 'High priority routed to Escalated.' : 'Normal priority routed to Standard.'
+        : kind === 'high'
+          ? 'Your High Priority test should follow the TRUE output to Escalated. Check the IF condition in n8n and run it again.'
+          : 'Your Normal Priority test should follow the FALSE output to Standard. Check the IF condition in n8n and run it again.',
+    }
     if (kind === 'high') setHighFeedback(result); else setNormalFeedback(result)
-    const bothPassed = kind === 'high' ? result.passed && progress.normalOutputPassed : result.passed && progress.highOutputPassed
-    updateProgress({ ...(kind === 'high' ? { highOutputPassed: result.passed } : { normalOutputPassed: result.passed }), lastNeedsAttention: !result.passed, stageStates: { ...progress.stageStates, 'verify-output': bothPassed ? 'passed' : result.passed ? 'in_progress' : 'needs_attention' } })
+    const bothPassed = kind === 'high' ? passed && progress.normalRouteTestPassed : passed && progress.highRouteTestPassed
+    updateProgress({ ...(kind === 'high' ? { highRouteTestPassed: passed } : { normalRouteTestPassed: passed }), lastNeedsAttention: !passed, stageStates: { ...progress.stageStates, 'verify-output': bothPassed ? 'passed' : passed ? 'in_progress' : 'needs_attention' } })
   }
 
   function checkDiagnosis() {
@@ -183,7 +194,7 @@ export function Lesson01Lab() {
   }
 
   const completionItems = useMemo(() => [
-    ['Workflow structure', progress.structurePassed], ['High output', progress.highOutputPassed], ['Normal output', progress.normalOutputPassed],
+    ['Workflow structure', progress.structurePassed], ['High route test', progress.highRouteTestPassed], ['Normal route test', progress.normalRouteTestPassed],
     ['Break It attempted', progress.breakAttempted], ['Diagnosis', progress.diagnosisPassed], ['Repair verified', progress.repairedOutputPassed], ['Knowledge check', progress.quizPassed],
   ] as const, [progress])
 
@@ -199,7 +210,7 @@ export function Lesson01Lab() {
         {stage === 'build' && <Build/>}
         {stage === 'test' && <TestCases/>}
         {stage === 'verify-structure' && <div><StageHeader number="04" title="Verify your workflow" text="Export the workflow from n8n as JSON. Detleng validates it in your browser and does not permanently store the file."/><label className="file-drop"><FileJson/><strong>Upload exported n8n workflow</strong><span>.json only · maximum 2 MB</span><input type="file" accept="application/json,.json" onChange={(event) => void handleWorkflowFile(event.target.files?.[0])}/></label>{structureResult && <div className="validation-results">{structureResult.checks.map((check) => <div className={check.passed ? 'validation-check is-pass' : 'validation-check is-fail'} key={check.id}><span>{check.passed ? '✓' : '!'}</span><div><strong>{check.label}</strong>{check.detail && !check.passed && <p>{check.detail}</p>}</div></div>)}</div>}</div>}
-        {stage === 'verify-output' && <div><StageHeader number="05" title="Verify execution output" text="Paste the output from each final branch. Whitespace and property order do not matter."/><div className="output-grid"><JsonVerifier title="A. High Priority Output" value={highText} onChange={setHighText} onVerify={() => verifyOutput('high')} feedback={highFeedback} button="Verify High Route"/><JsonVerifier title="B. Normal Priority Output" value={normalText} onChange={setNormalText} onVerify={() => verifyOutput('normal')} feedback={normalFeedback} button="Verify Normal Route"/></div></div>}
+        {stage === 'verify-output' && <div><StageHeader number="05" title="Run your workflow tests" text="Run both cases in n8n, observe which branch executes, then record what you saw."/><div className="route-test-grid"><RouteTest title="Test A — High Priority" values={[['priority','high'],['budget','1500']]} choice={highRouteChoice} onChoice={setHighRouteChoice} onVerify={() => verifyRoute('high')} feedback={highFeedback} passed={progress.highRouteTestPassed}/><RouteTest title="Test B — Normal Priority" values={[['priority','normal'],['budget','300']]} choice={normalRouteChoice} onChoice={setNormalRouteChoice} onVerify={() => verifyRoute('normal')} feedback={normalFeedback} passed={progress.normalRouteTestPassed}/></div>{progress.highRouteTestPassed && progress.normalRouteTestPassed && <p className="route-tests-complete"><CheckCircle2 size={20}/> Both workflow tests passed. Next is now unlocked.</p>}</div>}
         {stage === 'break-it' && <div><StageHeader number="06" title="Break It" text="Create a deliberate field mismatch and observe what the IF node does."/><ol className="instruction-list"><li>In your first Edit Fields node, rename <code>priority</code> to <code>priorityLevel</code>.</li><li>Do not update the IF node.</li><li>Run the high-priority workflow again and inspect the route.</li></ol><button className="button button--dark" onClick={() => updateProgress({ breakAttempted: true, stageStates: { ...progress.stageStates, 'break-it': 'passed' } })}>{progress.breakAttempted ? '✓ Break attempt recorded' : 'I ran the broken workflow'}</button></div>}
         {stage === 'debug' && <DebugStage diagnosis={diagnosis} setDiagnosis={setDiagnosis} checkDiagnosis={checkDiagnosis} diagnosisPassed={progress.diagnosisPassed} repairText={repairText} setRepairText={setRepairText} verifyRepair={verifyRepair} repairFeedback={repairFeedback}/>}
         {stage === 'knowledge-check' && <div><StageHeader number="08" title="Knowledge Check" text="Pass all three questions. You can review and retry as often as needed."/><div className="quiz-list">{lesson01Quiz.map((question, index) => <fieldset className="quiz-question" key={question.id}><legend>{index + 1}. {question.question}</legend>{question.options.map((option, optionIndex) => <label key={option}><input type="radio" name={question.id} checked={quizAnswers[question.id] === optionIndex} onChange={() => setQuizAnswers((current) => ({ ...current, [question.id]: optionIndex }))}/>{option}</label>)}</fieldset>)}</div><button className="button button--dark" onClick={submitQuiz}>Check answers</button>{quizFeedback && <StatusMessage passed={progress.quizPassed} message={quizFeedback}/>}</div>}
@@ -231,6 +242,6 @@ function DebugStage({ diagnosis, setDiagnosis, checkDiagnosis, diagnosisPassed, 
   return <div><StageHeader number="07" title="Debug the mismatch" text="Inspect the data leaving Edit Fields, compare it with the IF condition, then repair the workflow."/><fieldset className="quiz-question"><legend>What caused the workflow behavior to change?</legend>{[['a','The downstream IF condition still expected priority.'],['b','The Manual Trigger was deleted.'],['c','Authentication failed.'],['d','n8n lost internet access.']].map(([value,label]) => <label key={value}><input type="radio" name="diagnosis" value={value} checked={diagnosis === value} onChange={(event) => setDiagnosis(event.target.value)}/>{label}</label>)}</fieldset><button className="button button--light" disabled={!diagnosis} onClick={checkDiagnosis}>Check diagnosis</button>{diagnosisPassed && <StatusMessage passed message="Correct. The IF node still looked for the original priority field."/>}<div className="repair-box"><h3>Repair and verify again</h3><p>Restore <code>priority</code>, run the high path, then paste its repaired final output.</p><textarea value={repairText} onChange={(event) => setRepairText(event.target.value)} placeholder={'{\n  "route": "escalated",\n  "status": "ready"\n}'}/><button className="button button--dark" onClick={verifyRepair}>Verify repaired output</button>{repairFeedback && <StatusMessage {...repairFeedback}/>}</div></div>
 }
 
-function JsonVerifier({ title, value, onChange, onVerify, feedback, button }: { title: string; value: string; onChange: (value: string) => void; onVerify: () => void; feedback: Feedback | null; button: string }) {
-  return <article className="json-verifier"><h3>{title}</h3><textarea value={value} onChange={(event) => onChange(event.target.value)} spellCheck={false} placeholder={'{\n  "route": "…",\n  "status": "ready"\n}'}/><button className="button button--dark" onClick={onVerify}>{button}</button>{feedback && <StatusMessage {...feedback}/>}</article>
+function RouteTest({ title, values, choice, onChoice, onVerify, feedback, passed }: { title: string; values: string[][]; choice: string; onChoice: (value: string) => void; onVerify: () => void; feedback: Feedback | null; passed: boolean }) {
+  return <article className={passed ? 'route-test-card is-passed' : 'route-test-card'}><span className="route-test-state">{passed ? '✓ Passed' : 'Run in n8n'}</span><h3>{title}</h3><p>In your first Edit Fields node set:</p><dl>{values.map(([name,value]) => <div key={name}><dt>{name}</dt><dd>{value}</dd></div>)}</dl><fieldset className="route-choice"><legend>Which branch ran?</legend><label><input type="radio" name={title} checked={choice === 'escalated'} onChange={() => onChoice('escalated')}/> Escalated</label><label><input type="radio" name={title} checked={choice === 'standard'} onChange={() => onChoice('standard')}/> Standard</label></fieldset><button className="button button--dark" disabled={!choice} onClick={onVerify}>Check my observation</button>{feedback && <StatusMessage {...feedback}/>}</article>
 }

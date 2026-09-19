@@ -8,10 +8,13 @@ export function lesson01CacheKey(userId: string) { return `detleng:lesson:1:${us
 export function normalizeLesson01Progress(value: unknown): Lesson01Progress {
   if (!value || typeof value !== 'object') return structuredClone(lesson01InitialProgress)
   const saved = value as Partial<Lesson01Progress>
+  const legacy = value as { highOutputPassed?: boolean; normalOutputPassed?: boolean }
   return {
     ...structuredClone(lesson01InitialProgress),
     ...saved,
     viewedStage: saved.viewedStage || saved.currentStage || 'understand',
+    highRouteTestPassed: saved.highRouteTestPassed ?? legacy.highOutputPassed ?? false,
+    normalRouteTestPassed: saved.normalRouteTestPassed ?? legacy.normalOutputPassed ?? false,
     stageStates: { ...lesson01InitialProgress.stageStates, ...saved.stageStates },
   }
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { lesson01CanComplete, lesson01InitialProgress } from './lesson01-config'
 import { computeLesson01Status } from './status'
-import { advanceLesson01Progress, readLesson01Cache, reconcileLesson01Progress, writeLesson01Cache } from './progress-cache'
+import { advanceLesson01Progress, normalizeLesson01Progress, readLesson01Cache, reconcileLesson01Progress, writeLesson01Cache } from './progress-cache'
 import { validateExecutionOutput, validateN8nWorkflowText } from './validators'
 
 const validWorkflow = JSON.stringify({
@@ -9,8 +9,8 @@ const validWorkflow = JSON.stringify({
     { name: 'Manual Trigger', type: 'n8n-nodes-base.manualTrigger', parameters: {} },
     { name: 'Create Request', type: 'n8n-nodes-base.set', parameters: { fields: ['customerName', 'department', 'priority', 'budget'] } },
     { name: 'Check Priority', type: 'n8n-nodes-base.if', parameters: { condition: 'priority equals high' } },
-    { name: 'Escalated', type: 'n8n-nodes-base.set', parameters: { fields: ['route', 'status'] } },
-    { name: 'Standard', type: 'n8n-nodes-base.set', parameters: { fields: ['route', 'status'] } },
+    { name: 'Escalated', type: 'n8n-nodes-base.set', parameters: { assignments: [{ name: 'route', value: 'escalated' }, { name: 'status', value: 'ready' }] } },
+    { name: 'Standard', type: 'n8n-nodes-base.set', parameters: { assignments: [{ name: 'route', value: 'standard' }, { name: 'status', value: 'ready' }] } },
   ],
   connections: { 'Check Priority': { main: [[{ node: 'Escalated' }], [{ node: 'Standard' }]] } },
 })
@@ -20,6 +20,15 @@ describe('Lesson 01 deterministic validation', () => {
     const result = validateN8nWorkflowText(validWorkflow)
     expect(result.passed).toBe(true)
     expect(result.checks.every((check) => check.passed)).toBe(true)
+  })
+
+  it('checks the true/false branch destinations and configured route values', () => {
+    const reversed = JSON.parse(validWorkflow) as { connections: Record<string, { main: unknown[][] }> }
+    reversed.connections['Check Priority'].main.reverse()
+    const result = validateN8nWorkflowText(JSON.stringify(reversed))
+    expect(result.passed).toBe(false)
+    expect(result.checks.find((check) => check.id === 'true-branch')?.passed).toBe(false)
+    expect(result.checks.find((check) => check.id === 'false-branch')?.passed).toBe(false)
   })
 
   it('fails invalid JSON cleanly and identifies a missing IF node', () => {
@@ -40,7 +49,7 @@ describe('Lesson 01 deterministic validation', () => {
     expect(computeLesson01Status(lesson01InitialProgress)).toBe('Learning')
     expect(computeLesson01Status({ ...lesson01InitialProgress, currentStage: 'build' })).toBe('Practicing')
     expect(computeLesson01Status({ ...lesson01InitialProgress, lastNeedsAttention: true })).toBe('Needs Review')
-    const eligible = { ...lesson01InitialProgress, currentStage: 'complete', structurePassed: true, highOutputPassed: true, normalOutputPassed: true, breakAttempted: true, diagnosisPassed: true, repairedOutputPassed: true, quizPassed: true }
+    const eligible = { ...lesson01InitialProgress, currentStage: 'complete', structurePassed: true, highRouteTestPassed: true, normalRouteTestPassed: true, breakAttempted: true, diagnosisPassed: true, repairedOutputPassed: true, quizPassed: true }
     expect(computeLesson01Status(eligible)).toBe('Practicing')
     const complete = { ...eligible, completed: true }
     expect(computeLesson01Status(complete)).toBe('Completed')
@@ -68,5 +77,16 @@ describe('Lesson 01 deterministic validation', () => {
     expect(reconciled.currentStage).toBe('verify-structure')
     expect(reconciled.testCompleted).toBe(true)
     window.localStorage.removeItem('detleng:lesson:1:' + userId)
+  })
+
+  it('preserves previously passed output checks as the new beginner route checks', () => {
+    const restored = normalizeLesson01Progress({
+      currentStage: 'verify-output',
+      viewedStage: 'verify-output',
+      highOutputPassed: true,
+      normalOutputPassed: true,
+    })
+    expect(restored.highRouteTestPassed).toBe(true)
+    expect(restored.normalRouteTestPassed).toBe(true)
   })
 })

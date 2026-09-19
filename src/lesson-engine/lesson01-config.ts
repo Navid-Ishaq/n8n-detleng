@@ -5,7 +5,7 @@ export const lesson01Stages = [
   { id: 'build', label: 'Build' },
   { id: 'test', label: 'Test' },
   { id: 'verify-structure', label: 'Verify Structure' },
-  { id: 'verify-output', label: 'Verify Output' },
+  { id: 'verify-output', label: 'Run Tests' },
   { id: 'break-it', label: 'Break It' },
   { id: 'debug', label: 'Debug' },
   { id: 'knowledge-check', label: 'Knowledge Check' },
@@ -16,7 +16,7 @@ export const lesson01Stages = [
 export const lesson01InitialProgress: Lesson01Progress = {
   currentStage: 'understand', viewedStage: 'understand', stageStates: { understand: 'in_progress' },
   understandCompleted: false, buildCompleted: false, testCompleted: false,
-  structurePassed: false, highOutputPassed: false, normalOutputPassed: false,
+  structurePassed: false, highRouteTestPassed: false, normalRouteTestPassed: false,
   breakAttempted: false, diagnosisPassed: false, repairedOutputPassed: false,
   quizPassed: false, documentCompleted: false, completed: false, reflectionBuilt: '', reflectionFixed: '', lastNeedsAttention: false,
   revision: 0, clientUpdatedAt: '',
@@ -29,5 +29,5 @@ export const lesson01Quiz = [
 ] as const
 
 export function lesson01CanComplete(progress: Lesson01Progress) {
-  return progress.structurePassed && progress.highOutputPassed && progress.normalOutputPassed && progress.breakAttempted && progress.diagnosisPassed && progress.repairedOutputPassed && progress.quizPassed
+  return progress.structurePassed && progress.highRouteTestPassed && progress.normalRouteTestPassed && progress.breakAttempted && progress.diagnosisPassed && progress.repairedOutputPassed && progress.quizPassed
 }

@@ -12,8 +12,8 @@ export type Lesson01Progress = {
   buildCompleted: boolean
   testCompleted: boolean
   structurePassed: boolean
-  highOutputPassed: boolean
-  normalOutputPassed: boolean
+  highRouteTestPassed: boolean
+  normalRouteTestPassed: boolean
   breakAttempted: boolean
   diagnosisPassed: boolean
   repairedOutputPassed: boolean
