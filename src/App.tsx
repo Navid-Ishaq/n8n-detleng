@@ -2,6 +2,8 @@ import { ArrowRight, Braces, Check, ChevronRight, CirclePlay, Menu, Network, Shi
 import { useState } from 'react'
 import { capstones, lessons, levels } from './data/curriculum'
 import { Footer } from './components/Footer'
+import { AuthPage } from './components/AuthPage'
+import { safeReturnTo } from './lib/routing'
 
 const interactionLabels = { webhook_lab: 'Live lab', self_run: 'Build lab', external_trigger: 'Field test', checklist: 'Ops lab', quiz_project: 'Project lab' }
 
@@ -11,7 +13,13 @@ function lessonHref(slug: string) {
 
 export function App() {
   const [menuOpen, setMenuOpen] = useState(false)
-
+  const path = window.location.pathname.replace(/\/+$/, '') || '/'
+  if (path === '/login' || path === '/signup') return <AuthPage mode={path === '/login' ? 'login' : 'signup'} returnTo={safeReturnTo(window.location.search)} />
+  if (path.startsWith('/lessons/')) {
+    const returnTo = `${path}${window.location.search}${window.location.hash}`
+    window.location.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`)
+    return <main className="route-loading"><p>Taking you to login…</p></main>
+  }
   return (
     <div id="top">
       <header className="site-header">
