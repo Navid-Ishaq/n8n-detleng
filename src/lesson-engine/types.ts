@@ -6,7 +6,11 @@ export type WorkflowValidation = { passed: boolean; checks: ValidationCheck[] }
 
 export type Lesson01Progress = {
   currentStage: string
+  viewedStage: string
   stageStates: Record<string, StageState>
+  understandCompleted: boolean
+  buildCompleted: boolean
+  testCompleted: boolean
   structurePassed: boolean
   highOutputPassed: boolean
   normalOutputPassed: boolean
@@ -14,10 +18,13 @@ export type Lesson01Progress = {
   diagnosisPassed: boolean
   repairedOutputPassed: boolean
   quizPassed: boolean
+  documentCompleted: boolean
   completed: boolean
   reflectionBuilt: string
   reflectionFixed: string
   lastNeedsAttention: boolean
+  revision: number
+  clientUpdatedAt: string
 }
 
 export type PersistedLessonProgress = {

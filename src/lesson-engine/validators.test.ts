@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { lesson01CanComplete, lesson01InitialProgress } from './lesson01-config'
 import { computeLesson01Status } from './status'
+import { advanceLesson01Progress, readLesson01Cache, reconcileLesson01Progress, writeLesson01Cache } from './progress-cache'
 import { validateExecutionOutput, validateN8nWorkflowText } from './validators'
 
 const validWorkflow = JSON.stringify({
@@ -43,5 +44,29 @@ describe('Lesson 01 deterministic validation', () => {
     expect(computeLesson01Status(eligible)).toBe('Practicing')
     const complete = { ...eligible, completed: true }
     expect(computeLesson01Status(complete)).toBe('Completed')
+  })
+
+  it('keeps the furthest stage separate from an earlier reviewed stage', () => {
+    const atVerify = advanceLesson01Progress(lesson01InitialProgress, {
+      currentStage: 'verify-structure', viewedStage: 'verify-structure',
+      understandCompleted: true, buildCompleted: true, testCompleted: true,
+      stageStates: { understand: 'passed', build: 'passed', test: 'passed', 'verify-structure': 'in_progress' },
+    })
+    const reviewing = advanceLesson01Progress(atVerify, { viewedStage: 'understand' })
+    expect(reviewing.currentStage).toBe('verify-structure')
+    expect(reviewing.viewedStage).toBe('understand')
+    expect(reviewing.stageStates.test).toBe('passed')
+    expect(computeLesson01Status(reviewing)).toBe('Practicing')
+  })
+
+  it('restores pending local progress instead of replacing it with server defaults', () => {
+    const userId = 'cache-test-user'
+    const local = advanceLesson01Progress(lesson01InitialProgress, { currentStage: 'verify-structure', viewedStage: 'verify-structure', understandCompleted: true, buildCompleted: true, testCompleted: true })
+    writeLesson01Cache(userId, local, true)
+    const cached = readLesson01Cache(userId)
+    const reconciled = reconcileLesson01Progress({}, cached)
+    expect(reconciled.currentStage).toBe('verify-structure')
+    expect(reconciled.testCompleted).toBe(true)
+    window.localStorage.removeItem('detleng:lesson:1:' + userId)
   })
 })

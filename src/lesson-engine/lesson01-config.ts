@@ -14,10 +14,12 @@ export const lesson01Stages = [
 ] as const
 
 export const lesson01InitialProgress: Lesson01Progress = {
-  currentStage: 'understand', stageStates: { understand: 'in_progress' },
+  currentStage: 'understand', viewedStage: 'understand', stageStates: { understand: 'in_progress' },
+  understandCompleted: false, buildCompleted: false, testCompleted: false,
   structurePassed: false, highOutputPassed: false, normalOutputPassed: false,
   breakAttempted: false, diagnosisPassed: false, repairedOutputPassed: false,
-  quizPassed: false, completed: false, reflectionBuilt: '', reflectionFixed: '', lastNeedsAttention: false,
+  quizPassed: false, documentCompleted: false, completed: false, reflectionBuilt: '', reflectionFixed: '', lastNeedsAttention: false,
+  revision: 0, clientUpdatedAt: '',
 }
 
 export const lesson01Quiz = [

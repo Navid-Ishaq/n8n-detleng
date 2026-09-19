@@ -4,6 +4,7 @@ import { Footer } from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { lesson01CanComplete, lesson01InitialProgress, lesson01Quiz, lesson01Stages } from './lesson01-config'
+import { advanceLesson01Progress, readLesson01Cache, reconcileLesson01Progress, writeLesson01Cache } from './progress-cache'
 import { StageIndicator } from './StageIndicator'
 import { computeLesson01Status } from './status'
 import type { Lesson01Progress, WorkflowValidation } from './types'
@@ -12,22 +13,20 @@ import { validateExecutionOutput, validateN8nWorkflowText } from './validators'
 const MAX_FILE_SIZE = 2 * 1024 * 1024
 type Feedback = { passed: boolean; message: string }
 
-function mergeProgress(value: unknown): Lesson01Progress {
-  if (!value || typeof value !== 'object') return structuredClone(lesson01InitialProgress)
-  const saved = value as Partial<Lesson01Progress>
-  return { ...structuredClone(lesson01InitialProgress), ...saved, stageStates: { ...lesson01InitialProgress.stageStates, ...saved.stageStates } }
-}
-
 function StatusMessage({ passed, message }: Feedback) {
   return <p className={passed ? 'lab-feedback lab-feedback--pass' : 'lab-feedback lab-feedback--fail'} role="status">{passed ? <CheckCircle2 size={19}/> : <AlertCircle size={19}/>} {message}</p>
 }
 
 export function Lesson01Lab() {
   const { user, logout } = useAuth()
-  const [progress, setProgress] = useState<Lesson01Progress>(() => structuredClone(lesson01InitialProgress))
+  const [progress, setProgress] = useState<Lesson01Progress>(() => user ? readLesson01Cache(user.id)?.progress ?? structuredClone(lesson01InitialProgress) : structuredClone(lesson01InitialProgress))
   const progressRef = useRef(progress)
+  const saveSequenceRef = useRef(0)
+  const startedAtRef = useRef<string | null>(null)
+  const completedAtRef = useRef<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saveState, setSaveState] = useState('')
+  const [syncPending, setSyncPending] = useState(false)
   const [structureResult, setStructureResult] = useState<WorkflowValidation | null>(null)
   const [highText, setHighText] = useState(''); const [normalText, setNormalText] = useState('')
   const [highFeedback, setHighFeedback] = useState<Feedback | null>(null); const [normalFeedback, setNormalFeedback] = useState<Feedback | null>(null)
@@ -40,37 +39,69 @@ export function Lesson01Lab() {
   const persist = useCallback(async (next: Lesson01Progress, complete = false) => {
     if (!user) return false
     const status = complete ? 'Completed' : computeLesson01Status(next)
+    const sequence = ++saveSequenceRef.current
+    writeLesson01Cache(user.id, next, true)
+    setSyncPending(true)
     setSaveState('Saving…')
     const now = new Date().toISOString()
+    const completedAt = complete || next.completed ? completedAtRef.current ?? now : null
     const { error } = await supabase.from('lesson_progress').upsert({
-      user_id: user.id, lesson_id: 1, status, progress_data: next, started_at: now,
-      completed_at: complete ? now : null, last_activity_at: now,
+      user_id: user.id, lesson_id: 1, status, progress_data: next, started_at: startedAtRef.current ?? now,
+      current_stage: next.currentStage, completed_at: completedAt, last_activity_at: now, updated_at: now,
       notes: [next.reflectionBuilt, next.reflectionFixed].filter(Boolean).join('\n\n'),
     }, { onConflict: 'user_id,lesson_id' })
-    setSaveState(error ? 'Could not save. Apply the Lesson 01 database migration, then try again.' : 'Progress saved')
+    if (error) {
+      console.error('Lesson 01 progress sync failed', { code: error.code, message: error.message, details: error.details, hint: error.hint })
+      if (sequence === saveSequenceRef.current) setSaveState('Your progress is saved locally and will sync when the connection is restored.')
+      return false
+    }
+    startedAtRef.current ??= now
+    completedAtRef.current = completedAt
+    if (sequence === saveSequenceRef.current && progressRef.current.revision === next.revision) {
+      writeLesson01Cache(user.id, next, false)
+      setSyncPending(false)
+      setSaveState('Progress saved')
+    }
     return !error
   }, [user])
 
   const updateProgress = useCallback((patch: Partial<Lesson01Progress>, shouldPersist = true) => {
-    const next = { ...progressRef.current, ...patch }
+    const next = advanceLesson01Progress(progressRef.current, patch)
     progressRef.current = next; setProgress(next)
+    if (user) { writeLesson01Cache(user.id, next, true); setSyncPending(true) }
     if (shouldPersist) void persist(next)
     return next
-  }, [persist])
+  }, [persist, user])
 
   useEffect(() => {
     if (!user) return
-    supabase.from('lesson_progress').select('progress_data').eq('user_id', user.id).eq('lesson_id', 1).maybeSingle().then(({ data }) => {
-      const next = mergeProgress(data?.progress_data)
-      void persist(next)
+    const cached = readLesson01Cache(user.id)
+    supabase.from('lesson_progress').select('progress_data,current_stage,started_at,completed_at,updated_at').eq('user_id', user.id).eq('lesson_id', 1).maybeSingle().then(({ data, error }) => {
+      if (error) {
+        console.error('Lesson 01 progress hydration failed', { code: error.code, message: error.message, details: error.details, hint: error.hint })
+        const fallback = cached?.progress ?? structuredClone(lesson01InitialProgress)
+        progressRef.current = fallback; setProgress(fallback); setSyncPending(true); setSaveState('Your progress is saved locally and will sync when the connection is restored.'); setLoading(false)
+        return
+      }
+      startedAtRef.current = data?.started_at ?? null
+      completedAtRef.current = data?.completed_at ?? null
+      const serverValue = data ? { ...(data.progress_data && typeof data.progress_data === 'object' ? data.progress_data : {}), currentStage: data.current_stage || 'understand', clientUpdatedAt: (data.progress_data as { clientUpdatedAt?: string } | null)?.clientUpdatedAt || data.updated_at || '' } : null
+      const next = data ? reconcileLesson01Progress(serverValue, cached) : cached?.progress ?? advanceLesson01Progress(structuredClone(lesson01InitialProgress), {})
       progressRef.current = next; setProgress(next); setLoading(false)
+      if (!data || cached?.syncPending) void persist(next)
     })
   }, [persist, user])
 
+  useEffect(() => {
+    const retry = () => { if (progressRef.current && user) void persist(progressRef.current, progressRef.current.completed) }
+    window.addEventListener('online', retry)
+    return () => window.removeEventListener('online', retry)
+  }, [persist, user])
+
   const status = computeLesson01Status(progress)
-  const currentIndex = lesson01Stages.findIndex((item) => item.id === progress.currentStage)
+  const currentIndex = lesson01Stages.findIndex((item) => item.id === progress.viewedStage)
   const canComplete = lesson01CanComplete(progress)
-  const stage = progress.currentStage
+  const stage = progress.viewedStage
 
   const canOpenStage = (id: string) => {
     if (['understand', 'build', 'test', 'verify-structure', 'verify-output'].includes(id)) return true
@@ -83,9 +114,21 @@ export function Lesson01Lab() {
 
   const goToStage = (id: string) => {
     if (!canOpenStage(id)) return
-    const previous = progressRef.current.currentStage
-    const states = { ...progressRef.current.stageStates, [previous]: progressRef.current.stageStates[previous] === 'needs_attention' ? 'needs_attention' : 'passed', [id]: progressRef.current.stageStates[id] === 'passed' ? 'passed' : 'in_progress' } as Lesson01Progress['stageStates']
-    updateProgress({ currentStage: id, stageStates: states, lastNeedsAttention: false })
+    const previousViewed = progressRef.current.viewedStage
+    const previousIsIntro = ['understand', 'build', 'test'].includes(previousViewed)
+    const states = { ...progressRef.current.stageStates, [id]: progressRef.current.stageStates[id] === 'passed' ? 'passed' : 'in_progress' } as Lesson01Progress['stageStates']
+    if (previousIsIntro) states[previousViewed] = 'passed'
+    const currentProgressIndex = lesson01Stages.findIndex((item) => item.id === progressRef.current.currentStage)
+    const targetIndex = lesson01Stages.findIndex((item) => item.id === id)
+    updateProgress({
+      viewedStage: id,
+      currentStage: targetIndex > currentProgressIndex ? id : progressRef.current.currentStage,
+      understandCompleted: progressRef.current.understandCompleted || previousViewed === 'understand',
+      buildCompleted: progressRef.current.buildCompleted || previousViewed === 'build',
+      testCompleted: progressRef.current.testCompleted || previousViewed === 'test',
+      stageStates: states,
+      lastNeedsAttention: false,
+    })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -129,9 +172,14 @@ export function Lesson01Lab() {
 
   async function completeLesson() {
     if (!lesson01CanComplete(progressRef.current)) return
-    const next = { ...progressRef.current, completed: true, currentStage: 'complete', lastNeedsAttention: false, stageStates: { ...progressRef.current.stageStates, complete: 'passed' as const } }
+    const next = advanceLesson01Progress(progressRef.current, { completed: true, currentStage: 'complete', viewedStage: 'complete', lastNeedsAttention: false, stageStates: { ...progressRef.current.stageStates, complete: 'passed' as const } })
     const saved = await persist(next, true)
     if (saved) { progressRef.current = next; setProgress(next); setSaveState('Lesson 01 completed. Your dashboard is now updated.') }
+  }
+
+  function saveDocumentation() {
+    const documentCompleted = Boolean(progressRef.current.reflectionBuilt.trim() && progressRef.current.reflectionFixed.trim())
+    updateProgress({ documentCompleted, stageStates: { ...progressRef.current.stageStates, document: documentCompleted ? 'passed' : 'in_progress' } })
   }
 
   const completionItems = useMemo(() => [
@@ -143,7 +191,7 @@ export function Lesson01Lab() {
   return <div className="portal-page">
     <header className="portal-header"><a className="back-link" href="/dashboard"><ArrowLeft size={18}/> Dashboard</a><div className="portal-header-actions"><a className="brand brand--compact" href="/"><span className="brand-mark"><Network size={19}/></span><span>n8n <strong>Detleng</strong></span></a><button className="button button--ghost" onClick={() => void logout()}><LogOut size={17}/> Log out</button></div></header>
     <main className="portal-main lab-shell">
-      <div className="lab-hero"><div><p className="eyebrow">Lesson 01 · Foundation lab</p><h1>n8n Core</h1><p className="portal-lede">Build and explain an Operations Intake Workflow with real data, branching and debugging.</p></div><div className={"lab-status lab-status--" + status.toLowerCase().replaceAll(' ', '-')}><span>Automatic status</span><strong>{status}</strong><small>{saveState || 'Your progress is synced to your learner account.'}</small></div></div>
+      <div className="lab-hero"><div><p className="eyebrow">Lesson 01 · Foundation lab</p><h1>n8n Core</h1><p className="portal-lede">Build and explain an Operations Intake Workflow with real data, branching and debugging.</p></div><div className={"lab-status lab-status--" + status.toLowerCase().replaceAll(' ', '-')}><span>Automatic status</span><strong>{status}</strong><small>{saveState || 'Your progress is synced to your learner account.'}</small>{syncPending && <button type="button" className="sync-retry" onClick={() => void persist(progressRef.current, progressRef.current.completed)}>Retry sync</button>}</div></div>
       <div className="lab-reminder"><strong>Build in your n8n. Learn in Detleng.</strong><span>Your workflow remains in your own n8n environment.</span></div>
       <StageIndicator stages={lesson01Stages} current={stage} states={progress.stageStates} onSelect={goToStage} isEnabled={canOpenStage}/>
       <section className="lab-panel">
@@ -155,7 +203,7 @@ export function Lesson01Lab() {
         {stage === 'break-it' && <div><StageHeader number="06" title="Break It" text="Create a deliberate field mismatch and observe what the IF node does."/><ol className="instruction-list"><li>In your first Edit Fields node, rename <code>priority</code> to <code>priorityLevel</code>.</li><li>Do not update the IF node.</li><li>Run the high-priority workflow again and inspect the route.</li></ol><button className="button button--dark" onClick={() => updateProgress({ breakAttempted: true, stageStates: { ...progress.stageStates, 'break-it': 'passed' } })}>{progress.breakAttempted ? '✓ Break attempt recorded' : 'I ran the broken workflow'}</button></div>}
         {stage === 'debug' && <DebugStage diagnosis={diagnosis} setDiagnosis={setDiagnosis} checkDiagnosis={checkDiagnosis} diagnosisPassed={progress.diagnosisPassed} repairText={repairText} setRepairText={setRepairText} verifyRepair={verifyRepair} repairFeedback={repairFeedback}/>}
         {stage === 'knowledge-check' && <div><StageHeader number="08" title="Knowledge Check" text="Pass all three questions. You can review and retry as often as needed."/><div className="quiz-list">{lesson01Quiz.map((question, index) => <fieldset className="quiz-question" key={question.id}><legend>{index + 1}. {question.question}</legend>{question.options.map((option, optionIndex) => <label key={option}><input type="radio" name={question.id} checked={quizAnswers[question.id] === optionIndex} onChange={() => setQuizAnswers((current) => ({ ...current, [question.id]: optionIndex }))}/>{option}</label>)}</fieldset>)}</div><button className="button button--dark" onClick={submitQuiz}>Check answers</button>{quizFeedback && <StatusMessage passed={progress.quizPassed} message={quizFeedback}/>}</div>}
-        {stage === 'document' && <div><StageHeader number="09" title="Document what you learned" text="No screenshot is needed. Write two short engineering reflections."/><div className="reflection-grid"><label>What did you build?<textarea value={progress.reflectionBuilt} onChange={(event) => updateProgress({ reflectionBuilt: event.target.value }, false)} onBlur={() => void persist(progressRef.current)} placeholder="I built…"/></label><label>What did you break and fix?<textarea value={progress.reflectionFixed} onChange={(event) => updateProgress({ reflectionFixed: event.target.value }, false)} onBlur={() => void persist(progressRef.current)} placeholder="I changed… and fixed…"/></label></div></div>}
+        {stage === 'document' && <div><StageHeader number="09" title="Document what you learned" text="No screenshot is needed. Write two short engineering reflections."/><div className="reflection-grid"><label>What did you build?<textarea value={progress.reflectionBuilt} onChange={(event) => updateProgress({ reflectionBuilt: event.target.value }, false)} onBlur={saveDocumentation} placeholder="I built…"/></label><label>What did you break and fix?<textarea value={progress.reflectionFixed} onChange={(event) => updateProgress({ reflectionFixed: event.target.value }, false)} onBlur={saveDocumentation} placeholder="I changed… and fixed…"/></label></div></div>}
         {stage === 'complete' && <div><StageHeader number="10" title="Complete Lesson 01" text="Completion is unlocked by evidence from the lab—not by opening the page or selecting a status."/><div className="completion-grid">{completionItems.map(([label, passed]) => <div className={passed ? 'completion-item is-pass' : 'completion-item'} key={label}><span>{passed ? '✓' : '○'}</span>{label}</div>)}</div><button className="button button--primary complete-button" disabled={!canComplete || status === 'Completed'} onClick={() => void completeLesson()}>{status === 'Completed' ? '✓ Lesson 01 Completed' : canComplete ? 'Complete Lesson 01' : 'Complete all required checks first'}</button></div>}
         <div className="lab-controls"><button className="button button--light" disabled={currentIndex <= 0} onClick={() => goToStage(lesson01Stages[currentIndex - 1].id)}><ArrowLeft size={17}/> Previous</button><span>Stage {currentIndex + 1} of {lesson01Stages.length}</span><button className="button button--dark" disabled={currentIndex >= lesson01Stages.length - 1 || !canOpenStage(lesson01Stages[currentIndex + 1].id)} onClick={() => goToStage(lesson01Stages[currentIndex + 1].id)}>Next <ArrowRight size={17}/></button></div>
       </section>
