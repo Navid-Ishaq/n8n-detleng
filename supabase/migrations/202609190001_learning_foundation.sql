@@ -47,10 +47,25 @@ create table public.project_progress (
   unique (user_id, project_id)
 );
 
+create table public.portfolio_evidence (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  lesson_id integer check (lesson_id between 1 and 20),
+  project_id text,
+  github_url text,
+  screenshot_url text,
+  summary text,
+  problem_fixed text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (lesson_id is not null or project_id is not null)
+);
+
 alter table public.profiles enable row level security;
 alter table public.lesson_progress enable row level security;
 alter table public.lesson_connections enable row level security;
 alter table public.project_progress enable row level security;
+alter table public.portfolio_evidence enable row level security;
 
 create policy "Learners can read own profile" on public.profiles for select to authenticated using ((select auth.uid()) = id);
 create policy "Learners can update own profile" on public.profiles for update to authenticated using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
@@ -70,6 +85,11 @@ create policy "Learners can insert own project progress" on public.project_progr
 create policy "Learners can update own project progress" on public.project_progress for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "Learners can delete own project progress" on public.project_progress for delete to authenticated using ((select auth.uid()) = user_id);
 
+create policy "Learners can read own portfolio evidence" on public.portfolio_evidence for select to authenticated using ((select auth.uid()) = user_id);
+create policy "Learners can insert own portfolio evidence" on public.portfolio_evidence for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "Learners can update own portfolio evidence" on public.portfolio_evidence for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+create policy "Learners can delete own portfolio evidence" on public.portfolio_evidence for delete to authenticated using ((select auth.uid()) = user_id);
+
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
@@ -82,6 +102,12 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- Backfill profiles for accounts that existed before this migration was applied.
+insert into public.profiles (id, name)
+select id, coalesce(raw_user_meta_data ->> 'full_name', '')
+from auth.users
+on conflict (id) do nothing;
 
 create or replace function public.protect_profile_privileges()
 returns trigger language plpgsql set search_path = '' as $$
@@ -106,3 +132,4 @@ $$;
 create trigger profiles_set_updated_at before update on public.profiles for each row execute procedure public.set_updated_at();
 create trigger lesson_connections_set_updated_at before update on public.lesson_connections for each row execute procedure public.set_updated_at();
 create trigger project_progress_set_updated_at before update on public.project_progress for each row execute procedure public.set_updated_at();
+create trigger portfolio_evidence_set_updated_at before update on public.portfolio_evidence for each row execute procedure public.set_updated_at();
