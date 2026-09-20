@@ -5,5 +5,5 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   build: { outDir: 'dist', sourcemap: true },
-  test: { environment: 'jsdom', setupFiles: './src/test/setup.ts' },
+  test: { environment: 'jsdom', setupFiles: './src/test/setup.ts', include: ['src/**/*.test.{ts,tsx}'] },
 })
