@@ -1,95 +1,48 @@
-import { ArrowRight, Blocks, Braces, CircleDot, GitBranch, Globe2, Play, Rocket, Sparkles } from 'lucide-react'
+import { ArrowDown, ArrowRight, Blocks, CheckCircle2, CircleDot, GitBranch, Globe2, Play, RotateCcw, Send, Wrench } from 'lucide-react'
 
-export function Lesson01Opening({ onStart }: { onStart: () => void }) {
-  const capabilities = [
-    ['Triggers begin the work', 'Understand what starts an execution, from a manual click to a live Webhook.', CircleDot],
-    ['Nodes move and shape data', 'Watch each node receive information, transform it and pass it forward.', Blocks],
-    ['Branches make decisions', 'Use an IF node so one workflow can respond differently to different input.', GitBranch],
-    ['Webhooks connect systems', 'Learn Test and Production URLs, publish your workflow and trigger it from Detleng.', Globe2],
-    ['Debugging builds confidence', 'Introduce a field mismatch, inspect the failure, repair it and prove the fix.', Braces],
-  ] as const
+type OpeningMode = 'new' | 'progress' | 'completed'
+type OpeningProps = { mode: OpeningMode; stageNumber: number; onPrimary: () => void; onReview: () => void; onSummary: () => void }
 
+const capabilities = [
+  ['Workflow thinking', 'Understand triggers, nodes, executions and how data travels through a workflow.', Blocks],
+  ['Decision making', 'Use conditions and branches so the same workflow reacts differently to different inputs.', GitBranch],
+  ['Live Webhooks', 'Allow another application to trigger your n8n workflow over the internet.', Globe2],
+  ['Production thinking', 'Understand why Test URLs and Production URLs exist and when each one is used.', Send],
+  ['Debugging', 'Break a working workflow, observe the failure, repair it and verify that it is healthy again.', Wrench],
+] as const
+const mission = [
+  ['Build', 'Create your first working n8n flow.'], ['Run', 'Watch real data move through your nodes.'],
+  ['Connect', 'Let Detleng trigger your workflow from outside n8n.'], ['Break', 'Cause a real logic failure on purpose.'],
+  ['Repair', 'Fix the problem and prove your workflow works again.'],
+] as const
+
+export function Lesson01Opening({ mode, stageNumber, onPrimary, onReview, onSummary }: OpeningProps) {
+  const isCompleted = mode === 'completed'; const isProgress = mode === 'progress'
   return <section className="lesson-opening" aria-labelledby="lesson-opening-title">
-    <div className="opening-hero">
-      <div className="opening-copy">
-        <p className="opening-overline">Lesson 01 · Foundation Lab</p>
-        <h1 id="lesson-opening-title">From your first click to a live automation</h1>
-        <p className="opening-lede">You are about to build something real.</p>
-        <p>Start with a workflow that runs when you click a button. Finish with a published automation that another system can trigger live over the internet.</p>
-        <p>You will build it yourself in n8n, watch data move, create branches, connect Detleng through a Webhook, deliberately break the logic—and repair it.</p>
-        <p className="opening-promise"><Sparkles size={20} aria-hidden="true"/><strong>This is not a lesson where you simply read about n8n. You are going to operate it.</strong></p>
-        <button className="button button--primary opening-cta" type="button" onClick={onStart}>Start Lesson 01 <ArrowRight size={19}/></button>
-      </div>
-      <div className="opening-journey" aria-label="Journey from a manual workflow to a live automation">
-        <div className="journey-node journey-node--start"><Play aria-hidden="true"/><span>Manual click</span></div>
-        <span className="journey-line" aria-hidden="true"/>
-        <div className="journey-node"><Blocks aria-hidden="true"/><span>Data flows</span></div>
-        <span className="journey-line" aria-hidden="true"/>
-        <div className="journey-node"><GitBranch aria-hidden="true"/><span>Logic branches</span></div>
-        <span className="journey-line" aria-hidden="true"/>
-        <div className="journey-node journey-node--live"><Globe2 aria-hidden="true"/><span>Live Webhook</span></div>
-      </div>
-    </div>
+    <section className="mission-hook"><div className="mission-hook-copy"><p className="opening-overline">Lesson 01 · Foundation Lab</p>{isCompleted&&<p className="opening-state opening-state--complete"><CheckCircle2 size={18}/> Lesson 01 completed</p>}{isProgress&&<p className="opening-state">Welcome back · Stage {stageNumber} of 8</p>}<h1 id="lesson-opening-title">A request arrives.<br/>Nobody clicks anything.<br/><strong>Your workflow wakes up.</strong></h1><p className="opening-lede">That is the automation you are going to build today.</p><div className="opening-story"><p>Imagine a support request arrives while you are away from your computer.</p><p>Nobody opens n8n. Nobody presses Execute.</p><p>Your workflow receives the request, reads the data, decides how important it is, and sends it down the right path.</p></div><p className="opening-promise"><Globe2 size={21}/><strong>By the end of this lesson, another system will be able to trigger a workflow running inside your own n8n account.</strong></p></div>
+      <div className="transformation-visual" aria-label="Transformation from manual to live automation"><article><small>Today you start here</small><span><CircleDot/>You</span><ArrowDown/><span><Play/>Click Execute</span><ArrowDown/><strong>Workflow runs</strong></article><div className="transformation-shift"><span>Manual</span><ArrowRight/><span>Live</span></div><article className="transformation-live"><small>You will finish here</small><span><Globe2/>External System</span><ArrowDown/><span><Send/>Webhook</span><ArrowDown/><span><Blocks/>Your n8n wakes up</span><ArrowDown/><strong>Processes the request</strong></article></div></section>
 
-    <div className="opening-section">
-      <p className="section-kicker">What you will learn</p>
-      <h2>See how a real n8n workflow thinks.</h2>
-      <div className="opening-capabilities">
-        {capabilities.map(([title, text, Icon]) => <article key={title}><Icon aria-hidden="true"/><h3>{title}</h3><p>{text}</p></article>)}
-      </div>
-    </div>
+    <section className="opening-section mission-section"><p className="section-kicker">Your mission today</p><h2>You are not here to watch a workflow.<br/>You are here to build, operate and test one.</h2><div className="mission-track">{mission.map(([title,text],index)=><div className="mission-step" key={title}><article><span>{index+1}</span><h3>{title}</h3><p>{text}</p></article>{index<mission.length-1&&<ArrowRight/>}</div>)}</div><p className="mission-conclusion">Working once is good. <strong>Understanding why it works is engineering.</strong></p></section>
 
-    <div className="opening-build-card">
-      <div className="opening-build-copy"><p className="section-kicker">What you will build</p><h2>Operations Intake Workflow</h2><p>First run it manually. Then transform the same workflow into a live Webhook automation Detleng can test.</p></div>
-      <div className="opening-flow" aria-label="Operations Intake Workflow">
-        <span>Incoming Request</span><b>↓</b><span>Create Request</span><b>↓</b><span>Check Priority</span>
-        <div><span>High → Escalated</span><span>Normal → Standard</span></div>
-      </div>
-    </div>
+    <section className="automation-showcase"><div className="automation-copy"><p className="section-kicker">Meet your first automation</p><h2>Operations Intake Workflow</h2><p>A request contains a customer, department, priority and budget. Your workflow reads that information and makes a decision.</p><div className="decision-key"><span><b>High priority</b> → Escalated</span><span><b>Normal priority</b> → Standard</span></div></div><div className="opening-flow" aria-label="Operations Intake Workflow"><span>Incoming Request</span><ArrowDown/><span>Create Request</span><ArrowDown/><span>Check Priority</span><div><span>Escalated</span><span>Standard</span></div></div><div className="trigger-transformation"><p><strong>First,</strong> you will run it yourself.</p><ArrowRight/><p><strong>Then,</strong> remove yourself from the trigger and replace your click with a Webhook.</p><small>That is the moment your workflow becomes an automation another system can start.</small></div></section>
 
-    <div className="opening-mission">
-      <Rocket aria-hidden="true"/>
-      <div><p className="section-kicker">Your mission</p><h2>Build → Run → Connect → Break → Fix</h2><p>And most importantly: <strong>understand why it worked.</strong></p></div>
-    </div>
+    <section className="opening-section"><p className="section-kicker">What you will learn</p><h2>Five capabilities. Learned by doing.</h2><div className="opening-capabilities">{capabilities.map(([title,text,Icon])=><article key={title}><Icon/><h3>{title}</h3><p>{text}</p></article>)}</div><p className="capability-conclusion">You will not learn these as definitions. <strong>You will use every one of them.</strong></p></section>
+
+    <section className="before-begin"><div><p className="section-kicker">Before you begin</p><h2>One workflow. One mission. Eight stages.</h2><p>A few minutes from now, Detleng will send a real request across the internet to your n8n workflow. It will receive it, make a decision and return a result.</p><p>Before the lesson ends, you will deliberately break that workflow and bring it back to life.</p></div><div className="eight-stage-path">{['Understand','Build','Run','Webhook','Live Event','Publish','Break + Fix','Complete'].map((item,index)=><div key={item}><span>{String(index+1).padStart(2,'0')}</span><strong>{item}</strong>{index<7&&<ArrowDown/>}</div>)}</div><div className="opening-finale"><h2>{isCompleted?'Ready to review your first real automation?':'Ready to build your first real automation?'}</h2><div className="opening-actions"><button className="button button--primary" type="button" onClick={onPrimary}>{isCompleted?'Review Lesson':isProgress?'Resume Lesson':'Start Lesson 01'} <ArrowRight size={19}/></button>{isProgress&&<button className="button button--light" type="button" onClick={onReview}><RotateCcw size={18}/> Review from the beginning</button>}{isCompleted&&<button className="button button--light" type="button" onClick={onSummary}>Jump to Engineering Summary</button>}</div><p><CheckCircle2 size={17}/> Your workflow and credentials remain inside your own n8n environment.</p></div></section>
   </section>
 }
 
-const milestones = [
-  'Created a workflow from individual nodes', 'Moved real data through it', 'Built two IF branches',
-  'Changed a Manual Trigger into a Webhook', 'Received a live event from Detleng', 'Mapped incoming Webhook data',
-  'Published a Production Webhook', 'Passed High and Normal live tests', 'Introduced and diagnosed a field mismatch',
-  'Repaired the workflow and proved both routes again',
-]
+const engineeringJourney=['Built a workflow','Ran it manually','Moved real data','Created logic branches','Converted it to a Webhook','Received a live external event','Published it','Connected Detleng to your n8n','Tested High + Normal routes','Broke the logic deliberately','Detected the failure','Repaired it','Proved it works again']
+const closingCapabilities=[['Understand a workflow','Identify triggers, nodes, executions and how data moves between them.',Blocks],['Build decision logic','Use conditions and branches so different inputs produce different outcomes.',GitBranch],['Accept live events','Use a Webhook to let another application start your workflow.',Globe2],['Work with production flows','Understand the difference between testing and publishing for real use.',Send],['Debug with purpose','Break a workflow, observe what went wrong, fix it and verify the repair.',Wrench]] as const
 
-export function Lesson01CompletionStory() {
+export function Lesson01CompletionStory({ evidence,onReview }: { evidence:readonly (readonly [string,boolean])[]; onReview:()=>void }) {
   return <div className="completion-story">
-    <section className="completion-hero">
-      <span className="completion-badge">✓ Lesson 01 complete</span>
-      <h2>You built it. You broke it. You fixed it.</h2>
-      <p>Congratulations—your first real n8n engineering lab is complete.</p>
-      <p>You began with a workflow waiting for a manual click. Now you have a published automation that receives a real event, processes data, makes a decision and returns a result.</p>
-    </section>
-
-    <section className="completion-section">
-      <p className="section-kicker">Look at what you just did</p>
-      <div className="completion-milestones">{milestones.map((item, index) => <article key={item}><span>{index + 1}</span><p>{item}</p></article>)}</div>
-    </section>
-
-    <section className="completion-section">
-      <p className="section-kicker">What you can now do</p>
-      <div className="completion-capabilities">
-        <article><Blocks aria-hidden="true"/><h3>Read a workflow</h3><p>Explain triggers, nodes, executions and the data moving between them.</p></article>
-        <article><GitBranch aria-hidden="true"/><h3>Control its decisions</h3><p>Use conditions and branches to produce different results from different input.</p></article>
-        <article><Globe2 aria-hidden="true"/><h3>Connect it live</h3><p>Let another application start a published n8n workflow through a Webhook.</p></article>
-      </div>
-      <div className="mental-model" aria-label="Automation mental model">{['Event', 'Trigger', 'Data', 'Decision', 'Action', 'Result'].map((item, index) => <div key={item}><span>{item}</span>{index < 5 && <ArrowRight aria-hidden="true"/>}</div>)}</div>
-    </section>
-
-    <blockquote className="completion-realization">You are no longer just looking at n8n from the outside. <strong>You have started building with it.</strong></blockquote>
-
-    <section className="completion-next">
-      <div><p className="section-kicker">Your journey continues</p><h3>Lesson 02 — JSON</h3><p>You already moved JSON through a workflow today. Next, learn exactly what it is, how to read it and how to control it.</p></div>
-      <a className="button button--dark" href="/lessons/json">Continue to Lesson 02 <ArrowRight size={18}/></a>
-    </section>
+    <section className="completion-hero"><span className="completion-badge"><CheckCircle2 size={17}/> Lesson 01 complete</span><h2>You built it.<br/>You broke it.<br/><strong>You brought it back.</strong></h2><p className="completion-lede">Your first real n8n engineering lab is complete.</p><p>A little while ago, your workflow only ran when you clicked a button. Now another system can trigger it over the internet, send real data, let it make a decision and receive a result back.</p><p>And when the workflow failed, you knew how to repair it.</p></section>
+    <section className="completion-section"><p className="section-kicker">Look what you just did</p><h2>This was not just one workflow</h2><div className="engineering-cycle">{engineeringJourney.map((item,index)=><div key={item}><span>{index+1}</span><strong>{item}</strong>{index<engineeringJourney.length-1&&<ArrowDown/>}</div>)}</div><p className="cycle-conclusion">That is a complete engineering cycle.</p></section>
+    <section className="completion-section"><p className="section-kicker">What you can now do</p><h2>You can now...</h2><div className="completion-capabilities">{closingCapabilities.map(([title,text,Icon])=><article key={title}><Icon/><h3>{title}</h3><p>{text}</p></article>)}</div></section>
+    <section className="mental-model-section"><div><p className="section-kicker">The mental model</p><h2>This is automation</h2><p>Every automation you build from here will be some variation of this idea.</p></div><div className="mental-model">{['Event','Trigger','Data','Decision','Action','Result'].map((item,index)=><div key={item}><span>{item}</span>{index<5&&<ArrowDown/>}</div>)}</div><blockquote>You are no longer just looking at n8n from the outside. <strong>You have started thinking like someone who builds with it.</strong></blockquote></section>
+    <section className="completion-proof"><div><p className="section-kicker">Your proof</p><h2>Your work was verified</h2><p>These are not reading checkpoints. They are things your workflow actually did.</p></div><div className="completion-grid">{evidence.map(([label,passed])=><div className={passed?'completion-item is-pass':'completion-item'} key={label}><span>{passed?'✓':'○'}</span>{label}</div>)}</div></section>
+    <blockquote className="completion-realization"><strong>A working workflow is useful.<br/>A workflow you understand is powerful.</strong><p>You now know what happens when data enters a workflow, how logic changes its path, how another system wakes it up, and what happens when one small field no longer matches what the next node expects.</p><p>You did not just make the happy path work. You saw failure too. And you fixed it.</p></blockquote>
+    <section className="completion-next"><div><p className="section-kicker">Your journey continues</p><h2>Lesson 02 — JSON</h2><p>Today you already used JSON. Your Webhook received structured data, your nodes read values from it, and your IF node made decisions from it.</p><p>Next, learn how to read, navigate, shape and control JSON—because APIs, Webhooks, AI tools and almost every serious automation depend on it.</p><div className="completion-actions"><a className="button button--dark" href="/lessons/json">Continue to Lesson 02 <ArrowRight size={18}/></a><button className="button button--light" type="button" onClick={onReview}>Review Lesson 01</button></div></div><div className="closing-count"><strong>1</strong><span>lesson down</span><b>19 to go</b><small>But now you are not starting from zero anymore.</small></div></section>
   </div>
 }
