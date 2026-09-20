@@ -13,6 +13,7 @@ import type { Lesson01Progress, LiveResult } from './types'
 
 type Feedback = { passed: boolean; message: string }
 const markPassed = (progress: Lesson01Progress, stage: string) => ({ ...progress.stageStates, [stage]: 'passed' as const })
+const missionViewRequested = () => new URLSearchParams(window.location.search).get('view') === 'mission'
 
 function FeedbackMessage({ passed, message }: Feedback) {
   return <p className={passed ? 'lab-feedback lab-feedback--pass' : 'lab-feedback lab-feedback--fail'} role="status">{passed ? <CheckCircle2 size={20}/> : <AlertCircle size={20}/>} {message}</p>
@@ -25,7 +26,14 @@ export function Lesson01Lab() {
   const [loading, setLoading] = useState(true); const [saveState, setSaveState] = useState(''); const [syncPending, setSyncPending] = useState(false)
   const [legacyCompleted, setLegacyCompleted] = useState(false); const [testUrl, setTestUrl] = useState(''); const [productionUrl, setProductionUrl] = useState('')
   const [busy, setBusy] = useState(''); const [feedback, setFeedback] = useState<Feedback | null>(null); const [liveResults, setLiveResults] = useState<LiveResult[]>([])
-  const [showIntro, setShowIntro] = useState(false)
+  const [showIntro, setShowIntro] = useState(missionViewRequested)
+
+  const navigateMission = (open: boolean) => {
+    const url = new URL(window.location.href)
+    if (open) url.searchParams.set('view', 'mission'); else url.searchParams.delete('view')
+    window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    setShowIntro(open)
+  }
 
   useEffect(() => { progressRef.current = progress }, [progress])
   const persist = useCallback(async (next: Lesson01Progress, complete = false) => {
@@ -57,15 +65,16 @@ export function Lesson01Lab() {
       supabase.from('lesson_connections').select('webhook_url,connection_status').eq('user_id', user.id).eq('lesson_id', 1).eq('lesson_version', LESSON_01_VERSION).maybeSingle(),
     ]).then(([current, legacy, connection]) => {
       setLegacyCompleted(Boolean(legacy.data)); if (connection.data?.webhook_url) setProductionUrl(connection.data.webhook_url)
-      if (current.error) { console.error('Lesson 01 V2 hydration failed', current.error); const fallback = cached?.progress ?? structuredClone(lesson01InitialProgress); progressRef.current = fallback; setProgress(fallback); setShowIntro(fallback.revision === 0 && !fallback.understandCompleted && !fallback.completed); setSyncPending(true); setSaveState('Your progress is saved locally and will sync when the connection is restored.'); setLoading(false); return }
+      if (current.error) { console.error('Lesson 01 V2 hydration failed', current.error); const fallback = cached?.progress ?? structuredClone(lesson01InitialProgress); progressRef.current = fallback; setProgress(fallback); setShowIntro(missionViewRequested() || fallback.revision === 0 && !fallback.understandCompleted && !fallback.completed); setSyncPending(true); setSaveState('Your progress is saved locally and will sync when the connection is restored.'); setLoading(false); return }
       startedAtRef.current = current.data?.started_at ?? null; completedAtRef.current = current.data?.completed_at ?? null
       const server = current.data ? { ...(current.data.progress_data as object), currentStage: current.data.current_stage, clientUpdatedAt: (current.data.progress_data as { clientUpdatedAt?: string })?.clientUpdatedAt || current.data.updated_at } : null
       const next = current.data ? reconcileLesson01Progress(server, cached) : cached?.progress ?? structuredClone(lesson01InitialProgress)
-      progressRef.current = next; setProgress(next); setShowIntro(next.revision === 0 && !next.understandCompleted && !next.completed); setLoading(false); if (!current.data || cached?.syncPending) void persist(next)
+      progressRef.current = next; setProgress(next); setShowIntro(missionViewRequested() || next.revision === 0 && !next.understandCompleted && !next.completed); setLoading(false); if (!current.data || cached?.syncPending) void persist(next)
     })
   }, [persist, user])
 
   useEffect(() => { const retry = () => { if (user) void persist(progressRef.current, progressRef.current.completed) }; window.addEventListener('online', retry); return () => window.removeEventListener('online', retry) }, [persist, user])
+  useEffect(() => { const syncMissionView = () => setShowIntro(missionViewRequested()); window.addEventListener('popstate', syncMissionView); return () => window.removeEventListener('popstate', syncMissionView) }, [])
 
   const stage = progress.viewedStage; const currentIndex = lesson01Stages.findIndex((item) => item.id === stage); const canComplete = lesson01CanComplete(progress); const status = computeLesson01Status(progress)
   const openingMode = progress.completed ? 'completed' : progress.revision > 0 || progress.understandCompleted ? 'progress' : 'new'
@@ -119,7 +128,7 @@ export function Lesson01Lab() {
   if (loading) return <main className="route-loading"><p>Loading Lesson 01 V2…</p></main>
 
   return <div className="portal-page"><header className="portal-header"><a className="back-link" href="/dashboard"><ArrowLeft size={18}/> Dashboard</a><div className="portal-header-actions"><a className="brand brand--compact" href="/"><span className="brand-mark"><Network size={19}/></span><span>n8n <strong>Detleng</strong></span></a><button className="button button--ghost" onClick={() => void logout()}><LogOut size={17}/> Log out</button></div></header>
-    <main className="portal-main lab-shell">{showIntro ? <Lesson01Opening mode={openingMode} stageNumber={Math.max(1, lesson01Stages.findIndex((item) => item.id === progress.currentStage) + 1)} onPrimary={() => { setShowIntro(false); if (progress.completed) goToStage('understand') }} onReview={() => { setShowIntro(false); goToStage('understand') }} onSummary={() => { setShowIntro(false); goToStage('complete') }}/> : <><div className="lab-hero"><div><p className="eyebrow">Lesson 01 · Live foundation lab · V2</p><h1>n8n Core</h1><p className="portal-lede">Build, publish and debug an Operations Intake Workflow while Detleng tests your real n8n.</p></div><div className="lab-hero-side"><div className={`lab-status lab-status--${status.toLowerCase().replaceAll(' ', '-')}`}><span>Automatic status</span><strong>{status}</strong><small>{saveState || 'Progress syncs to your learner account.'}</small>{syncPending && <button className="sync-retry" onClick={() => void persist(progressRef.current, progressRef.current.completed)}>Retry sync</button>}</div><button className="button button--light lesson-opening-link" type="button" onClick={() => setShowIntro(true)}>View lesson mission</button></div></div>
+    <main className="portal-main lab-shell">{showIntro ? <Lesson01Opening mode={openingMode} stageNumber={Math.max(1, lesson01Stages.findIndex((item) => item.id === progress.currentStage) + 1)} onPrimary={() => { navigateMission(false); if (progress.completed) goToStage('understand') }} onReview={() => { navigateMission(false); goToStage('understand') }} onSummary={() => { navigateMission(false); goToStage('complete') }}/> : <><div className="lab-hero"><div><p className="eyebrow">Lesson 01 · Live foundation lab · V2</p><h1>n8n Core</h1><p className="portal-lede">Build, publish and debug an Operations Intake Workflow while Detleng tests your real n8n.</p></div><div className="lab-hero-side"><div className={`lab-status lab-status--${status.toLowerCase().replaceAll(' ', '-')}`}><span>Automatic status</span><strong>{status}</strong><small>{saveState || 'Progress syncs to your learner account.'}</small>{syncPending && <button className="sync-retry" onClick={() => void persist(progressRef.current, progressRef.current.completed)}>Retry sync</button>}</div><button className="button button--light lesson-opening-link" type="button" onClick={() => navigateMission(true)}>View lesson mission</button></div></div>
       {legacyCompleted && <p className="legacy-notice"><CheckCircle2 size={19}/> Lesson 01 has been upgraded. Your previous completion is preserved as V1 history; this live V2 experience tracks separately.</p>}
       <div className="lab-reminder"><strong>Build in your n8n. Learn in Detleng.</strong><span>Your workflow and credentials remain yours.</span></div>
       <StageIndicator stages={lesson01Stages} current={stage} states={progress.stageStates} onSelect={goToStage} isEnabled={canOpenStage}/>
