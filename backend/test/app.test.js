@@ -26,6 +26,8 @@ test('accepts only HTTPS n8n Cloud production webhook URLs', () => {
   assert.equal(validateN8nCloudWebhookUrl('http://learner.app.n8n.cloud/webhook/lesson-01').valid, false)
   assert.equal(validateN8nCloudWebhookUrl('https://example.com/webhook/lesson-01').valid, false)
   assert.equal(validateN8nCloudWebhookUrl('https://learner.app.n8n.cloud.evil.example/webhook/lesson-01').valid, false)
+  assert.equal(validateN8nCloudWebhookUrl('https://learner.app.n8n.cloud/webhook-test/lesson-01', 'test').valid, true)
+  assert.equal(validateN8nCloudWebhookUrl('https://learner.app.n8n.cloud/webhook/lesson-01', 'test').valid, false)
 })
 
 test('health endpoint is public', async () => {
@@ -48,6 +50,7 @@ test('live test requires a valid authenticated user', async () => {
 test('runs high and normal tests and returns structured results', async () => {
   const received = []
   const fetchImpl = async (_url, options) => {
+    assert.equal(options.redirect, 'error')
     const input = JSON.parse(options.body)
     received.push(input)
     const route = input.priority === 'high' ? 'escalated' : 'standard'
@@ -78,5 +81,60 @@ test('reports a deterministic route mismatch without leaking internals', async (
     assert.equal(body.passed, false)
     assert.equal(body.results[0].passed, false)
     assert.match(body.results[0].message, /Expected route/)
+  })
+})
+
+test('reports a wrong Normal route and a timeout as learner-safe failures', async () => {
+  const supabase = { auth: { getUser: async () => ({ data: { user: { id: 'learner-1' } }, error: null }) } }
+  const wrongNormal = createApp({ env, supabase, fetchImpl: async (_url, options) => {
+    const input = JSON.parse(options.body)
+    return new Response(JSON.stringify({ route: input.priority === 'high' ? 'escalated' : 'escalated', status: 'ready' }), { status: 200, headers: { 'content-type': 'application/json' } })
+  } })
+  await withServer(wrongNormal, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/lessons/n8n-core/live-test`, { method: 'POST', headers: { authorization: 'Bearer valid-token', 'content-type': 'application/json' }, body: JSON.stringify({ webhookUrl: 'https://learner.app.n8n.cloud/webhook/lesson-01' }) })
+    const body = await response.json()
+    assert.equal(body.results.find((item) => item.id === 'high').passed, true)
+    assert.equal(body.results.find((item) => item.id === 'normal').passed, false)
+  })
+  const timeout = createApp({ env, supabase, fetchImpl: async () => { const error = new Error('timed out'); error.name = 'TimeoutError'; throw error } })
+  await withServer(timeout, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/lessons/n8n-core/live-test`, { method: 'POST', headers: { authorization: 'Bearer valid-token', 'content-type': 'application/json' }, body: JSON.stringify({ webhookUrl: 'https://learner.app.n8n.cloud/webhook/lesson-01' }) })
+    const body = await response.json()
+    assert.match(body.results[0].message, /did not respond before the timeout/i)
+    assert.equal(body.results[0].reached, false)
+  })
+})
+
+test('temporary endpoint accepts only a test URL and sends the controlled event', async () => {
+  let received
+  const fetchImpl = async (_url, options) => { received = JSON.parse(options.body); return new Response('', { status: 200 }) }
+  const supabase = { auth: { getUser: async () => ({ data: { user: { id: 'learner-1' } }, error: null }) } }
+  const app = createApp({ env, fetchImpl, supabase })
+  await withServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/lessons/n8n-core/test-event`, { method: 'POST', headers: { authorization: 'Bearer valid-token', 'content-type': 'application/json' }, body: JSON.stringify({ webhookUrl: 'https://learner.app.n8n.cloud/webhook-test/lesson-01' }) })
+    assert.equal(response.status, 200)
+    assert.equal((await response.json()).passed, true)
+    assert.deepEqual(received, { customerName: 'Ali Khan', department: 'Support', priority: 'high', budget: 1500 })
+  })
+})
+
+test('break test counts logical failure but never counts an unreachable webhook', async () => {
+  const supabase = { auth: { getUser: async () => ({ data: { user: { id: 'learner-1' } }, error: null }) } }
+  const logicalFailure = createApp({ env, supabase, fetchImpl: async () => new Response(JSON.stringify({ route: 'standard', status: 'ready' }), { status: 200, headers: { 'content-type': 'application/json' } }) })
+  await withServer(logicalFailure, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/lessons/n8n-core/break-test`, { method: 'POST', headers: { authorization: 'Bearer valid-token', 'content-type': 'application/json' }, body: JSON.stringify({ webhookUrl: 'https://learner.app.n8n.cloud/webhook/lesson-01' }) })
+    assert.equal((await response.json()).passed, true)
+  })
+  const unreachable = createApp({ env, supabase, fetchImpl: async () => { throw new Error('network') } })
+  await withServer(unreachable, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/lessons/n8n-core/break-test`, { method: 'POST', headers: { authorization: 'Bearer valid-token', 'content-type': 'application/json' }, body: JSON.stringify({ webhookUrl: 'https://learner.app.n8n.cloud/webhook/lesson-01' }) })
+    const body = await response.json()
+    assert.equal(body.passed, false)
+    assert.equal(body.reached, false)
+  })
+  const serverError = createApp({ env, supabase, fetchImpl: async () => new Response('failed', { status: 500 }) })
+  await withServer(serverError, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/lessons/n8n-core/break-test`, { method: 'POST', headers: { authorization: 'Bearer valid-token', 'content-type': 'application/json' }, body: JSON.stringify({ webhookUrl: 'https://learner.app.n8n.cloud/webhook/lesson-01' }) })
+    assert.equal((await response.json()).passed, false)
   })
 })
