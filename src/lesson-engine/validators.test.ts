@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { lesson01CanComplete, lesson01InitialProgress } from './lesson01-config'
-import { advanceLesson01Progress, readLesson01Cache, reconcileLesson01Progress, writeLesson01Cache } from './progress-cache'
+import { advanceLesson01Progress, lesson01AttemptCacheKey, lesson01CacheKey, readLesson01AttemptCache, readLesson01Cache, reconcileLesson01Progress, writeLesson01AttemptCache, writeLesson01Cache } from './progress-cache'
 import { computeLesson01Status } from './status'
 
 describe('Lesson 01 V2 state model', () => {
@@ -33,5 +33,18 @@ describe('Lesson 01 V2 state model', () => {
     expect(reconciled.currentStage).toBe('test-event')
     expect(reconciled.webhookUpgradeCompleted).toBe(true)
     window.localStorage.removeItem(`detleng:lesson:1:v2:${userId}`)
+  })
+
+  it('keeps repeat attempt cache separate from canonical Lesson 01 progress', () => {
+    const userId = 'repeat-cache-user'
+    const canonical = { ...lesson01InitialProgress, completed: true, currentStage: 'complete', viewedStage: 'complete' }
+    const attempt = advanceLesson01Progress(lesson01InitialProgress, { understandCompleted: true, currentStage: 'build-manually', viewedStage: 'build-manually' })
+    writeLesson01Cache(userId, canonical, false)
+    writeLesson01AttemptCache(userId, 2, attempt, true)
+    expect(readLesson01Cache(userId)?.progress.completed).toBe(true)
+    expect(readLesson01AttemptCache(userId, 2)?.progress.currentStage).toBe('build-manually')
+    expect(lesson01AttemptCacheKey(userId, 2)).not.toBe(lesson01CacheKey(userId))
+    window.localStorage.removeItem(lesson01CacheKey(userId))
+    window.localStorage.removeItem(lesson01AttemptCacheKey(userId, 2))
   })
 })
