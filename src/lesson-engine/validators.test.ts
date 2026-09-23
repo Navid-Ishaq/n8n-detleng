@@ -3,7 +3,7 @@ import { lesson01CanComplete, lesson01InitialProgress } from './lesson01-config'
 import { advanceLesson01Progress, lesson01AttemptCacheKey, lesson01CacheKey, readLesson01AttemptCache, readLesson01Cache, reconcileLesson01Progress, writeLesson01AttemptCache, writeLesson01Cache } from './progress-cache'
 import { computeLesson01Status } from './status'
 
-describe('Lesson 01 V2 state model', () => {
+describe('Lesson 01 state model', () => {
   it('cannot complete before every live requirement passes', () => {
     expect(lesson01CanComplete(lesson01InitialProgress)).toBe(false)
     const eligible = { ...lesson01InitialProgress, understandCompleted: true, manualBuildCompleted: true, manualRunsCompleted: true, webhookUpgradeCompleted: true, testEventPassed: true, productionConnected: true, highLivePassed: true, normalLivePassed: true, breakObserved: true, repairPassed: true }
@@ -25,14 +25,14 @@ describe('Lesson 01 V2 state model', () => {
     expect(reviewing.viewedStage).toBe('understand')
   })
 
-  it('restores pending V2 local progress instead of server defaults', () => {
-    const userId = 'v2-cache-user'
+  it('restores pending local progress instead of server defaults', () => {
+    const userId = 'lesson-cache-user'
     const local = advanceLesson01Progress(lesson01InitialProgress, { currentStage: 'test-event', viewedStage: 'test-event', understandCompleted: true, manualBuildCompleted: true, manualRunsCompleted: true, webhookUpgradeCompleted: true })
     writeLesson01Cache(userId, local, true)
     const reconciled = reconcileLesson01Progress({}, readLesson01Cache(userId))
     expect(reconciled.currentStage).toBe('test-event')
     expect(reconciled.webhookUpgradeCompleted).toBe(true)
-    window.localStorage.removeItem(`detleng:lesson:1:v2:${userId}`)
+    window.localStorage.removeItem(lesson01CacheKey(userId))
   })
 
   it('keeps repeat attempt cache separate from canonical Lesson 01 progress', () => {

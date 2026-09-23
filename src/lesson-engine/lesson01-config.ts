@@ -1,6 +1,5 @@
 import type { Lesson01Progress } from './types'
 
-export const LESSON_01_VERSION = 2
 export const lesson01Stages = [
   { id: 'understand', label: 'Understand' }, { id: 'build-manually', label: 'Build Manually' },
   { id: 'run-yourself', label: 'Run It Yourself' }, { id: 'upgrade-webhook', label: 'Upgrade to Webhook' },
@@ -9,7 +8,7 @@ export const lesson01Stages = [
 ] as const
 
 export const lesson01InitialProgress: Lesson01Progress = {
-  lessonVersion: 2, currentStage: 'understand', viewedStage: 'understand', stageStates: { understand: 'in_progress' },
+  currentStage: 'understand', viewedStage: 'understand', stageStates: { understand: 'in_progress' },
   understandCompleted: false, manualBuildCompleted: false, manualRunsCompleted: false, webhookUpgradeCompleted: false,
   testEventPassed: false, productionConnected: false, highLivePassed: false, normalLivePassed: false,
   breakObserved: false, repairPassed: false, completed: false, lastNeedsAttention: false, revision: 0, clientUpdatedAt: '',

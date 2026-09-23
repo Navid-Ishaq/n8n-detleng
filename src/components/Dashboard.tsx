@@ -20,13 +20,10 @@ export function Dashboard() {
   const name = String(user?.user_metadata.full_name || user?.email?.split('@')[0] || 'Learner')
 
   useEffect(() => {
-    supabase.from('lesson_progress').select('lesson_id,lesson_version,status').eq('user_id', user?.id).then(({ data, error }) => {
+    supabase.from('lesson_progress').select('lesson_id,status').eq('user_id', user?.id).then(({ data, error }) => {
       if (error) { setSyncMessage('Progress sync will begin after the learning migration is applied.'); return }
       const next: Record<number, LessonStatus> = {}
-      data?.forEach((row) => {
-        const currentVersion = row.lesson_id === 1 ? 2 : 1
-        if (row.lesson_version === currentVersion) next[row.lesson_id] = row.status as LessonStatus
-      })
+      data?.forEach((row) => { next[row.lesson_id] = row.status as LessonStatus })
       setStatuses(next)
     })
   }, [user?.id])
