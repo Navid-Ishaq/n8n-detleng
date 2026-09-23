@@ -61,7 +61,7 @@ By the end of Lesson 20, they will be able to:
 - Handle realistic freelance and client requirements
 - Step into junior-to-mid practical AI Automation Engineering work with genuine confidence
 
-This is not 20 disconnected toys. It is one evolving system and one evolving engineer.
+Every level adds a new engineering capability to the same learning journey.
 
 ---
 
@@ -118,12 +118,29 @@ Once a lesson is completed, the learner can always return to **View Mission · R
 
 ---
 
+## Curriculum Consistency Contract
+
+Every lesson follows the same learning contract while allowing the practical work to determine its exact number of build stages:
+
+1. **Identity and prerequisite** — the learner knows where the lesson fits and what must already be understood.
+2. **Story and mission** — the problem appears before the tool instructions.
+3. **Lesson build** — a focused artifact contributes a reusable capability to the progressive Operations Intake system.
+4. **Build and self-test** — the learner performs and observes the work inside their own environment.
+5. **Observable verification** — Detleng checks only deterministic behavior available through an explicit verification interface.
+6. **Break, diagnose, repair, verify** — failure investigation is separate from initial success.
+7. **Evidence and explanation** — the learner records what was built without exposing credentials or sensitive endpoints.
+8. **Completion and bridge** — the lesson closes with a capability statement and a direct reason for the next lesson.
+
+The shared structure is intentional; repeated filler is not. Each section must add lesson-specific information rather than restating the same promise in different words.
+
+---
+
 ## The Four-Level Journey
 
 | Level | Lessons | Learner Transformation | Prerequisite Skills | Portfolio Value |
 |---|---|---|---|---|
 | **Level 1 — Foundation** | 01–06 | "I can build and connect real workflows." | None — true beginner entry point | A working, authenticated, event-driven intake system |
-| **Level 2 — Code + Data** | 07–10 | "I can manipulate, query, and persist real data." | Level 1 complete | A workflow with real logic and a real memory (database) |
+| **Level 2 — Code & Data** | 07–10 | "I can manipulate, query, and persist real data." | Level 1 complete | A workflow with real logic and a real memory (database) |
 | **Level 3 — AI Engineering** | 11–15 | "I can add LLMs, agents, knowledge, and tools responsibly." | Level 1–2 complete | An AI system that classifies, retrieves, and acts with bounded tools |
 | **Level 4 — Production Engineering** | 16–20 | "I can make automation resilient, deployable, observable, and safe." | Level 1–3 complete | A deployed, monitored, secured, human-approved production system |
 
@@ -133,7 +150,7 @@ Each level is described in full at the start of its section below, including job
 
 ## The Progressive Project
 
-One project grows across all 20 lessons. It never gets thrown away — it gets more capable.
+One core system grows across all 20 lessons. Some lessons use a focused supporting build to teach one skill safely; that build then contributes a reusable pattern, workflow, data model, or infrastructure layer to the progressive Operations Intake system. The learner does not maintain 20 unrelated demo projects.
 
 ```text
 L01  Basic Operations Intake workflow (manual → webhook)
@@ -216,7 +233,7 @@ This alone is enough to take on simple freelance automations: "when X happens, c
 - **Level:** 1 — Foundation
 - **Core skill:** Workflow anatomy — triggers, nodes, data, decisions
 - **Difficulty:** Entry point
-- **Primary project:** Operations Intake Workflow
+- **Lesson build:** Operations Intake Workflow
 - **Prerequisites:** None
 
 ### Opening Story
@@ -349,7 +366,7 @@ Today you already moved JSON through a workflow without naming it. Next, you lea
 - **Level:** 1 — Foundation
 - **Core skill:** Reading, navigating, and transforming JSON, including nested objects and arrays
 - **Difficulty:** Beginner
-- **Primary project:** Order Payload Normalizer
+- **Lesson build:** Order Payload Normalizer
 - **Prerequisites:** Lesson 01
 
 ### Opening Story
@@ -486,7 +503,7 @@ You've been receiving JSON — but where does it actually come from? Next, you l
 - **Level:** 1 — Foundation
 - **Core skill:** Reading and reasoning about REST API requests, responses, and status codes
 - **Difficulty:** Beginner
-- **Primary project:** Customer Information API Explorer
+- **Lesson build:** Customer Information API Explorer
 - **Prerequisites:** Lessons 01–02
 
 ### Opening Story
@@ -623,7 +640,7 @@ So far you've called out to APIs. Next, you flip the direction: instead of askin
 - **Level:** 1 — Foundation
 - **Core skill:** Designing and routing inbound, event-driven webhook intake
 - **Difficulty:** Beginner–Intermediate
-- **Primary project:** Multi-Event Intake Endpoint
+- **Lesson build:** Multi-Event Intake Endpoint
 - **Prerequisites:** Lessons 01–03
 
 ### Opening Story
@@ -762,7 +779,7 @@ Your workflow can now receive events beautifully. Next, it needs to reach *outwa
 - **Level:** 1 — Foundation
 - **Core skill:** Outbound API orchestration using the HTTP Request node
 - **Difficulty:** Intermediate
-- **Primary project:** Request Enrichment Workflow
+- **Lesson build:** Request Enrichment Workflow
 - **Prerequisites:** Lessons 01–04
 
 ### Opening Story
@@ -905,7 +922,7 @@ Right now your practice API asked for nothing. Real APIs almost always demand pr
 - **Level:** 1 — Foundation
 - **Core skill:** Secure API authentication using n8n's Credentials Store
 - **Difficulty:** Intermediate
-- **Primary project:** Protected Customer API Integration
+- **Lesson build:** Protected Customer API Integration
 - **Prerequisites:** Lessons 01–05
 
 ### Opening Story
@@ -1030,7 +1047,7 @@ This morning, every API you called let you walk right in. Now you can prove who 
 
 ---
 
-# LEVEL 2 — CODE + DATA
+# LEVEL 2 — CODE & DATA
 
 **Lessons 07–10**
 
@@ -1061,10 +1078,10 @@ This is the point where the learner can credibly say "I don't just connect APIs 
 ## When Nodes Are Not Enough
 
 ### Lesson Identity
-- **Level:** 2 — Code + Data
+- **Level:** 2 — Code & Data
 - **Core skill:** Practical, automation-focused JavaScript inside the Code node
 - **Difficulty:** Intermediate
-- **Primary project:** Order Intelligence Transformer
+- **Lesson build:** Order Intelligence Transformer
 - **Prerequisites:** Lessons 01–06
 
 ### Opening Story
@@ -1193,10 +1210,10 @@ JavaScript solved your problem — but it's not the only language automation eng
 ## Add a Second Coding Tool to Your Automation Belt
 
 ### Lesson Identity
-- **Level:** 2 — Code + Data
+- **Level:** 2 — Code & Data
 - **Core skill:** Practical, automation-focused Python inside n8n's Python execution environment
 - **Difficulty:** Intermediate
-- **Primary project:** Data Cleanup & Analysis Step
+- **Lesson build:** Data Cleanup & Analysis Step
 - **Prerequisites:** Lessons 01–07
 
 ### Opening Story
@@ -1326,10 +1343,10 @@ You've processed data. Now it's time to *ask* data precise questions — SQL.
 ## Ask Data Precise Questions
 
 ### Lesson Identity
-- **Level:** 2 — Code + Data
+- **Level:** 2 — Code & Data
 - **Core skill:** Writing precise, safe SQL queries against operational data
 - **Difficulty:** Intermediate
-- **Primary project:** Operations Reporting Database
+- **Lesson build:** Operations Reporting Database
 - **Prerequisites:** Lessons 01–08
 
 ### Opening Story
@@ -1458,14 +1475,14 @@ So far, every workflow forgot everything the moment it finished running. Next, y
 
 ---
 
-# 10 — PostgreSQL + Supabase
+# 10 — PostgreSQL / Supabase
 ## Give Your Automation a Memory
 
 ### Lesson Identity
-- **Level:** 2 — Code + Data
+- **Level:** 2 — Code & Data
 - **Core skill:** Persisting and retrieving real application state
 - **Difficulty:** Intermediate–Advanced
-- **Primary project:** Persistent Operations Database
+- **Lesson build:** Persistent Operations Database
 - **Prerequisites:** Lessons 01–09
 
 ### Opening Story
@@ -1622,14 +1639,14 @@ This is the skill set clients and employers currently pay the most attention to.
 
 ---
 
-# 11 — LLM Integrations
+# 11 — LLM APIs
 ## Give Your Workflow Language Intelligence
 
 ### Lesson Identity
 - **Level:** 3 — AI Engineering
 - **Core skill:** Structured, validated LLM output as a workflow component
 - **Difficulty:** Intermediate–Advanced
-- **Primary project:** AI Request Triage
+- **Lesson build:** AI Request Triage
 - **Prerequisites:** Lessons 01–10
 
 ### Opening Story
@@ -1771,7 +1788,7 @@ Your LLM can classify. Next, it learns to act — deciding, on its own, which to
 - **Level:** 3 — AI Engineering
 - **Core skill:** Designing bounded, tool-using AI agents
 - **Difficulty:** Advanced
-- **Primary project:** Operations Assistant Agent
+- **Lesson build:** Operations Assistant Agent
 - **Prerequisites:** Lessons 01–11
 
 ### Opening Story
@@ -1909,7 +1926,7 @@ Your agent can act. Next, it learns to answer from your actual knowledge — not
 - **Level:** 3 — AI Engineering
 - **Core skill:** Retrieval-Augmented Generation grounded in real documents
 - **Difficulty:** Advanced
-- **Primary project:** Company Knowledge Assistant
+- **Lesson build:** Company Knowledge Assistant
 - **Prerequisites:** Lessons 01–12
 
 ### Opening Story
@@ -2042,7 +2059,7 @@ Retrieval just worked like magic. Next, you open that box: Vector Databases.
 - **Level:** 3 — AI Engineering
 - **Core skill:** Vector database fundamentals for semantic retrieval
 - **Difficulty:** Advanced
-- **Primary project:** Semantic Knowledge Search
+- **Lesson build:** Semantic Knowledge Search
 - **Prerequisites:** Lessons 01–13
 
 ### Opening Story
@@ -2164,7 +2181,7 @@ Your agent has tools. Your system has knowledge. Next, you learn the standardize
 - **Level:** 3 — AI Engineering
 - **Core skill:** Connecting agents to tools via the Model Context Protocol
 - **Difficulty:** Advanced
-- **Primary project:** MCP-Connected Operations Agent
+- **Lesson build:** MCP-Connected Operations Agent
 - **Prerequisites:** Lessons 01–14
 
 ### Opening Story
@@ -2316,14 +2333,14 @@ This is precisely the difference between "I built a demo" and "I can ship and op
 
 ---
 
-# 16 — Error Handling
+# 16 — Error Handling & Debugging
 ## Build Automations That Survive Failure
 
 ### Lesson Identity
 - **Level:** 4 — Production Engineering
 - **Core skill:** Designing resilient workflows that survive real-world failure
 - **Difficulty:** Advanced
-- **Primary project:** Resilient API Workflow
+- **Lesson build:** Resilient API Workflow
 - **Prerequisites:** Lessons 01–15
 
 ### Opening Story
@@ -2448,14 +2465,14 @@ Your workflow survives failure. Next, make its entire *environment* reproducible
 
 ---
 
-# 17 — Docker
+# 17 — Docker & Self-Hosting
 ## Make Your Automation Environment Reproducible
 
 ### Lesson Identity
 - **Level:** 4 — Production Engineering
 - **Core skill:** Containerized, reproducible n8n environments
 - **Difficulty:** Advanced
-- **Primary project:** Local n8n Engineering Stack
+- **Lesson build:** Local n8n Engineering Stack
 - **Prerequisites:** Lessons 01–16
 
 ### Opening Story
@@ -2576,14 +2593,14 @@ Your environment is now reproducible. Next, your *history* becomes reproducible 
 
 ---
 
-# 18 — Git + GitHub
+# 18 — Git & GitHub
 ## Treat Automations Like Engineering Assets
 
 ### Lesson Identity
 - **Level:** 4 — Production Engineering
 - **Core skill:** Version control discipline for automation projects
 - **Difficulty:** Intermediate–Advanced
-- **Primary project:** Automation Portfolio Repository
+- **Lesson build:** Automation Portfolio Repository
 - **Prerequisites:** Lessons 01–17
 
 ### Opening Story
@@ -2705,14 +2722,14 @@ Your project is reproducible and versioned. Next, it goes somewhere the whole in
 
 ---
 
-# 19 — Cloud + VPS
+# 19 — Cloud / VPS Deployment
 ## Put Your Automation on the Internet Properly
 
 ### Lesson Identity
 - **Level:** 4 — Production Engineering
 - **Core skill:** Real, secure deployment to a cloud VPS
 - **Difficulty:** Advanced
-- **Primary project:** Production-Style Hosted n8n
+- **Lesson build:** Production-Style Hosted n8n
 - **Prerequisites:** Lessons 01–18
 
 ### Opening Story
@@ -2837,7 +2854,7 @@ Being online isn't enough. Now make it safe and observable — the final graduat
 
 ---
 
-# 20 — Monitoring + Security + Human Approval
+# 20 — Monitoring, Security & Human Approval
 ## Production Capstone
 
 This is not another lesson. This is the final graduation mission.
@@ -2846,7 +2863,7 @@ This is not another lesson. This is the final graduation mission.
 - **Level:** 4 — Production Engineering
 - **Core skill:** Monitoring, security hardening, and human-in-the-loop design, combined into one production system
 - **Difficulty:** Capstone
-- **Primary project:** Production AI Operations System
+- **Lesson build:** Production AI Operations System
 - **Prerequisites:** Lessons 01–19 (all of them)
 
 ### Opening Story
