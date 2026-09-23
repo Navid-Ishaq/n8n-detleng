@@ -1,8 +1,29 @@
-# n8n Detleng — AI Automation Engineer Master Curriculum
+<a id="top"></a>
+
+<div align="center">
+
+# n8n Detleng
+
+## AI Automation Engineer Master Curriculum
 
 **A practical learning platform for n8n AI Automation Engineering**
 
 *From your first click to a production-grade, secure, monitored AI automation system.*
+
+**Built by Muhammad Naveed Ishaque**
+
+</div>
+
+<table>
+  <tr>
+    <td align="center"><a href="https://n8n.detleng.com/signup/"><strong>Start Learning →</strong></a></td>
+    <td align="center"><a href="https://n8n.detleng.com/"><strong>Visit n8n Detleng →</strong></a></td>
+    <td align="center"><a href="#curriculum-map"><strong>Explore Curriculum ↓</strong></a></td>
+    <td align="center"><a href="https://network.detleng.com"><strong>DeTLeng Network ↗</strong></a></td>
+  </tr>
+</table>
+
+> **Independent learning project. Not affiliated with or endorsed by n8n GmbH.**
 
 ---
 
@@ -29,6 +50,7 @@ The current n8n terminology and webhook behavior in this blueprint are grounded 
 
 ---
 
+<a id="curriculum-map"></a>
 ## Curriculum Map
 
 Use this map to read the curriculum in order or jump directly to a level or lesson. Each lesson title links to its full specification below.
@@ -3289,3 +3311,30 @@ Completing this curriculum is not the end of learning — it's the end of starti
 - Contributing to or building custom n8n nodes for tools not yet well supported
 
 The learner is not finished learning. But they are no longer starting as a beginner — and everything above builds on a foundation they built, broke, repaired, deployed, and can explain, themselves.
+
+---
+
+<div align="center">
+
+## n8n Detleng
+
+**A practical learning platform for n8n AI Automation Engineering.**
+
+Built by **Muhammad Naveed Ishaque**
+
+DeTLeng helps learners build, test, debug, verify, and explain real automation systems through guided engineering practice.
+
+</div>
+
+<table>
+  <tr>
+    <td align="center"><a href="https://n8n.detleng.com/signup/"><strong>Start Learning →</strong></a></td>
+    <td align="center"><a href="https://n8n.detleng.com/"><strong>Visit n8n Detleng →</strong></a></td>
+    <td align="center"><a href="#curriculum-map"><strong>Explore Curriculum ↑</strong></a></td>
+    <td align="center"><a href="https://network.detleng.com"><strong>Explore DeTLeng Network ↗</strong></a></td>
+  </tr>
+</table>
+
+<p align="center"><strong>Independent learning project. Not affiliated with or endorsed by n8n GmbH.</strong></p>
+
+<p align="center"><a href="#top">Back to top ↑</a></p>
