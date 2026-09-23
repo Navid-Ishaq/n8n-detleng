@@ -29,6 +29,59 @@ The current n8n terminology and webhook behavior in this blueprint are grounded 
 
 ---
 
+## Curriculum Map
+
+Use this map to read the curriculum in order or jump directly to a level or lesson. Each lesson title links to its full specification below.
+
+### [Level 1 — Foundation · Lessons 01–06](#level-1)
+
+| Lesson | Focus | Lesson build |
+|---|---|---|
+| [01 — n8n Core](#lesson-01) | Workflow anatomy, triggers, data flow, and branching | Operations Intake Workflow |
+| [02 — JSON](#lesson-02) | Reading and transforming structured automation data | Order Payload Normalizer |
+| [03 — REST APIs](#lesson-03) | Requests, responses, methods, endpoints, and status codes | Customer Information API Explorer |
+| [04 — Webhooks](#lesson-04) | Event-driven intake and production webhook behavior | Multi-Event Intake Endpoint |
+| [05 — HTTP Request Node](#lesson-05) | Calling and handling external services from n8n | Request Enrichment Workflow |
+| [06 — Authentication](#lesson-06) | Protecting integrations and handling credentials safely | Protected Customer API Integration |
+
+### [Level 2 — Code & Data · Lessons 07–10](#level-2)
+
+| Lesson | Focus | Lesson build |
+|---|---|---|
+| [07 — JavaScript](#lesson-07) | Custom transformations and workflow logic | Order Intelligence Transformer |
+| [08 — Python](#lesson-08) | Data cleanup and analysis inside automation | Data Cleanup & Analysis Step |
+| [09 — SQL](#lesson-09) | Querying and reporting over operational data | Operations Reporting Database |
+| [10 — PostgreSQL / Supabase](#lesson-10) | Persistent state and learner-owned records | Persistent Operations Database |
+
+### [Level 3 — AI Engineering · Lessons 11–15](#level-3)
+
+| Lesson | Focus | Lesson build |
+|---|---|---|
+| [11 — LLM APIs](#lesson-11) | Deterministic use of language-model APIs in workflows | AI Request Triage |
+| [12 — AI Agents](#lesson-12) | Bounded agents that choose and use tools | Operations Assistant Agent |
+| [13 — RAG](#lesson-13) | Answers grounded in approved source material | Company Knowledge Assistant |
+| [14 — Vector Databases](#lesson-14) | Embeddings, semantic retrieval, and vector storage | Semantic Knowledge Search |
+| [15 — MCP](#lesson-15) | Standardized tool discovery and invocation | MCP-Connected Operations Agent |
+
+### [Level 4 — Production Engineering · Lessons 16–20](#level-4)
+
+| Lesson | Focus | Lesson build |
+|---|---|---|
+| [16 — Error Handling & Debugging](#lesson-16) | Failure paths, retries, diagnosis, and recovery | Resilient API Workflow |
+| [17 — Docker & Self-Hosting](#lesson-17) | A reproducible n8n runtime and supporting services | Local n8n Engineering Stack |
+| [18 — Git & GitHub](#lesson-18) | Version-controlled workflow assets and documentation | Automation Portfolio Repository |
+| [19 — Cloud / VPS Deployment](#lesson-19) | Hosting n8n with a domain, HTTPS, and backups | Production-Style Hosted n8n |
+| [20 — Monitoring, Security & Human Approval](#lesson-20) | Safe, observable, human-governed production operation | Production AI Operations System |
+
+### Recommended Reading Paths
+
+- **New learner:** begin with [Level 1](#level-1) and follow the lessons in numerical order.
+- **Returning learner:** use the lesson links above to resume from the exact specification you need.
+- **Platform builder or reviewer:** read the [Curriculum Consistency Contract](#curriculum-consistency-contract), then inspect each lesson's **Detleng Live Verification** and completion sections.
+- **Employer or client:** scan the **Lesson build** column above, then review the portfolio and workplace relevance sections inside the lessons that matter most.
+
+---
+
 ## Core Vision
 
 The learner starts with little or no practical n8n engineering experience.
@@ -199,6 +252,7 @@ By Lesson 20, the simple two-branch workflow from Lesson 01 has become a monitor
 
 ---
 
+<a id="level-1"></a>
 # LEVEL 1 — FOUNDATION
 
 **Lessons 01–06**
@@ -226,6 +280,7 @@ This alone is enough to take on simple freelance automations: "when X happens, c
 
 ---
 
+<a id="lesson-01"></a>
 # 01 — n8n Core
 ## From Your First Click to a Live Automation
 
@@ -359,6 +414,7 @@ Today you already moved JSON through a workflow without naming it. Next, you lea
 
 ---
 
+<a id="lesson-02"></a>
 # 02 — JSON
 ## Learn the Language Your Automations Speak
 
@@ -496,6 +552,7 @@ You've been receiving JSON — but where does it actually come from? Next, you l
 
 ---
 
+<a id="lesson-03"></a>
 # 03 — REST APIs
 ## Learn How Systems Talk to Each Other
 
@@ -633,6 +690,7 @@ So far you've called out to APIs. Next, you flip the direction: instead of askin
 
 ---
 
+<a id="lesson-04"></a>
 # 04 — Webhooks
 ## Stop Asking. Let Events Come to You.
 
@@ -772,6 +830,7 @@ Your workflow can now receive events beautifully. Next, it needs to reach *outwa
 
 ---
 
+<a id="lesson-05"></a>
 # 05 — HTTP Request
 ## Make Your Workflow Reach Outside n8n
 
@@ -915,6 +974,7 @@ Right now your practice API asked for nothing. Real APIs almost always demand pr
 
 ---
 
+<a id="lesson-06"></a>
 # 06 — Authentication
 ## Open the Right Doors Without Exposing the Keys
 
@@ -1047,6 +1107,7 @@ This morning, every API you called let you walk right in. Now you can prove who 
 
 ---
 
+<a id="level-2"></a>
 # LEVEL 2 — CODE & DATA
 
 **Lessons 07–10**
@@ -1074,6 +1135,7 @@ This is the point where the learner can credibly say "I don't just connect APIs 
 
 ---
 
+<a id="lesson-07"></a>
 # 07 — JavaScript
 ## When Nodes Are Not Enough
 
@@ -1206,6 +1268,7 @@ JavaScript solved your problem — but it's not the only language automation eng
 
 ---
 
+<a id="lesson-08"></a>
 # 08 — Python
 ## Add a Second Coding Tool to Your Automation Belt
 
@@ -1339,6 +1402,7 @@ You've processed data. Now it's time to *ask* data precise questions — SQL.
 
 ---
 
+<a id="lesson-09"></a>
 # 09 — SQL
 ## Ask Data Precise Questions
 
@@ -1475,6 +1539,7 @@ So far, every workflow forgot everything the moment it finished running. Next, y
 
 ---
 
+<a id="lesson-10"></a>
 # 10 — PostgreSQL / Supabase
 ## Give Your Automation a Memory
 
@@ -1612,6 +1677,7 @@ This morning, every workflow forgot everything the second it finished. Now Reque
 
 ---
 
+<a id="level-3"></a>
 # LEVEL 3 — AI ENGINEERING
 
 **Lessons 11–15**
@@ -1639,6 +1705,7 @@ This is the skill set clients and employers currently pay the most attention to.
 
 ---
 
+<a id="lesson-11"></a>
 # 11 — LLM APIs
 ## Give Your Workflow Language Intelligence
 
@@ -1781,6 +1848,7 @@ Your LLM can classify. Next, it learns to act — deciding, on its own, which to
 
 ---
 
+<a id="lesson-12"></a>
 # 12 — AI Agents
 ## From One Prompt to Tool-Using Automation
 
@@ -1919,6 +1987,7 @@ Your agent can act. Next, it learns to answer from your actual knowledge — not
 
 ---
 
+<a id="lesson-13"></a>
 # 13 — RAG
 ## Let AI Answer From Your Knowledge, Not Its Memory
 
@@ -2052,6 +2121,7 @@ Retrieval just worked like magic. Next, you open that box: Vector Databases.
 
 ---
 
+<a id="lesson-14"></a>
 # 14 — Vector Databases
 ## Understand the Engine Behind Semantic Search
 
@@ -2174,6 +2244,7 @@ Your agent has tools. Your system has knowledge. Next, you learn the standardize
 
 ---
 
+<a id="lesson-15"></a>
 # 15 — MCP
 ## Give AI a Standard Way to Discover and Use Tools
 
@@ -2306,6 +2377,7 @@ This morning, every tool your agent used had to be wired by hand. Now it can dis
 
 ---
 
+<a id="level-4"></a>
 # LEVEL 4 — PRODUCTION ENGINEERING
 
 **Lessons 16–20**
@@ -2333,6 +2405,7 @@ This is precisely the difference between "I built a demo" and "I can ship and op
 
 ---
 
+<a id="lesson-16"></a>
 # 16 — Error Handling & Debugging
 ## Build Automations That Survive Failure
 
@@ -2465,6 +2538,7 @@ Your workflow survives failure. Next, make its entire *environment* reproducible
 
 ---
 
+<a id="lesson-17"></a>
 # 17 — Docker & Self-Hosting
 ## Make Your Automation Environment Reproducible
 
@@ -2593,6 +2667,7 @@ Your environment is now reproducible. Next, your *history* becomes reproducible 
 
 ---
 
+<a id="lesson-18"></a>
 # 18 — Git & GitHub
 ## Treat Automations Like Engineering Assets
 
@@ -2722,6 +2797,7 @@ Your project is reproducible and versioned. Next, it goes somewhere the whole in
 
 ---
 
+<a id="lesson-19"></a>
 # 19 — Cloud / VPS Deployment
 ## Put Your Automation on the Internet Properly
 
@@ -2854,6 +2930,7 @@ Being online isn't enough. Now make it safe and observable — the final graduat
 
 ---
 
+<a id="lesson-20"></a>
 # 20 — Monitoring, Security & Human Approval
 ## Production Capstone
 
