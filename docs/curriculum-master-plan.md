@@ -1,18 +1,14 @@
 <a id="top"></a>
 
-<div align="center">
+<h1 align="center">n8n Detleng</h1>
 
-# n8n Detleng
+<h2 align="center">AI Automation Engineer Master Curriculum</h2>
 
-## AI Automation Engineer Master Curriculum
+<p align="center"><strong>A practical learning platform for n8n AI Automation Engineering</strong></p>
 
-**A practical learning platform for n8n AI Automation Engineering**
+<p align="center"><em>From your first click to a production-grade, secure, monitored AI automation system.</em></p>
 
-*From your first click to a production-grade, secure, monitored AI automation system.*
-
-**Built by Muhammad Naveed Ishaque**
-
-</div>
+<p align="center"><strong>Built by Muhammad Naveed Ishaque</strong></p>
 
 <table>
   <tr>
@@ -3314,17 +3310,13 @@ The learner is not finished learning. But they are no longer starting as a begin
 
 ---
 
-<div align="center">
+<h2 align="center">n8n Detleng</h2>
 
-## n8n Detleng
+<p align="center"><strong>A practical learning platform for n8n AI Automation Engineering.</strong></p>
 
-**A practical learning platform for n8n AI Automation Engineering.**
+<p align="center">Built by <strong>Muhammad Naveed Ishaque</strong></p>
 
-Built by **Muhammad Naveed Ishaque**
-
-DeTLeng helps learners build, test, debug, verify, and explain real automation systems through guided engineering practice.
-
-</div>
+<p align="center">DeTLeng helps learners build, test, debug, verify, and explain real automation systems through guided engineering practice.</p>
 
 <table>
   <tr>
