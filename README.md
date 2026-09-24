@@ -52,4 +52,4 @@ Learners configure OpenAI, Claude, Gemini, Gmail, Telegram and other credentials
 
 ## Lesson development
 
-Lesson contributors and coding agents must follow the [teaching implementation standard](docs/DETLENG_LESSON_TEACHING_STANDARD.md) and [AI lesson golden rules](docs/DETLENG_AI_LESSON_GOLDEN_RULES.md).
+Before implementing a lesson, contributors must build and verify its workflow in the current n8n UI, then follow the [DeTLeng lesson build process](docs/DETLENG_LESSON_BUILD_PROCESS.md). The curriculum remains the source of truth for lesson scope and outcomes.
