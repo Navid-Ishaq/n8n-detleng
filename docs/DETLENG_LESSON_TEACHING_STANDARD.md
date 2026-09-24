@@ -2,6 +2,11 @@
 
 Every practical lesson must take a learner from uncertainty to a verified result without requiring an outside tutorial.
 
+## Related documents
+
+- Curriculum source: [`docs/curriculum-master-plan.md`](curriculum-master-plan.md)
+- Golden lesson philosophy: [`docs/DETLENG_AI_LESSON_GOLDEN_RULES.md`](DETLENG_AI_LESSON_GOLDEN_RULES.md)
+
 ## Core learning journey
 
 **Zero → Guided practice → Confidence → Real verification**
@@ -20,6 +25,8 @@ Previous lessons may make a learner faster, but they are never an excuse to omit
 8. **Verify** — distinguish deterministic Detleng verification from learner confirmation.
 9. **Continue** — unlock progression only after the learner has a clear success target.
 
+Use this loop independently in every lesson. Earlier lessons may provide familiarity, but the current lesson must still teach every action it requires.
+
 ## Language rules
 
 - Define a technical term when it first appears.
@@ -27,6 +34,8 @@ Previous lessons may make a learner faster, but they are never an excuse to omit
 - If an n8n label varies by version, explain the purpose of the setting and acknowledge that wording may vary.
 - Never use expert shorthand where a beginner needs a specific UI action.
 - Never claim Detleng verified something it cannot observe.
+- Teach one known successful path before inviting experimentation.
+- Prefer real workflow behavior and deterministic validation over screenshots, quizzes or unverified completion buttons.
 
 ## Final lesson test
 

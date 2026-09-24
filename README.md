@@ -49,3 +49,7 @@ n8n-detleng/
 ## Security boundary
 
 Learners configure OpenAI, Claude, Gemini, Gmail, Telegram and other credentials only inside their own n8n credential store. DeTLeng stores learning state and learner-provided workflow connection metadata, protected by Supabase RLS. Trusted outbound workflow tests will run only in the Render API with authentication, URL validation, request limits, timeouts and private-network SSRF protections.
+
+## Lesson development
+
+Lesson contributors and coding agents must follow the [teaching implementation standard](docs/DETLENG_LESSON_TEACHING_STANDARD.md) and [AI lesson golden rules](docs/DETLENG_AI_LESSON_GOLDEN_RULES.md).
