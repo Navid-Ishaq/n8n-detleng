@@ -3,10 +3,12 @@ import { useAuth } from '../context/AuthContext'
 import { lessons } from '../data/curriculum'
 import { Lesson01Lab } from '../lesson-engine/Lesson01Lab'
 import { Lesson02Lab } from '../lesson-engine/Lesson02Lab'
+import { Lesson02VisualGuide } from '../lesson-engine/Lesson02VisualGuide'
 import { Footer } from './Footer'
 
 export function LessonPage({ slug }: { slug: string }) {
   const { logout } = useAuth()
+  if (slug === 'json-visual-guide') return <Lesson02VisualGuide />
   const lesson = lessons.find((item) => item.slug === slug)
   if (!lesson) return <main className="route-loading"><p>Lesson not found.</p></main>
   if (slug === 'n8n-core') return <Lesson01Lab />

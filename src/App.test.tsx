@@ -49,4 +49,11 @@ describe('public learning experience', () => {
     expect(screen.getByText(/Taking you to login/i)).toBeInTheDocument()
     window.history.pushState({}, '', '/')
   })
+
+  it('protects the optional Lesson 02 visual guide', () => {
+    window.history.pushState({}, '', '/lessons/json-visual-guide')
+    render(<App />)
+    expect(screen.getByText(/Taking you to login/i)).toBeInTheDocument()
+    window.history.pushState({}, '', '/')
+  })
 })
