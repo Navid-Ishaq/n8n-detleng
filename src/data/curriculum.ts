@@ -27,7 +27,7 @@ export const levels: Level[] = [
 
 export const lessons: Lesson[] = [
   { id: 1, slug: 'n8n-core', title: 'n8n Core', summary: 'Nodes, executions, expressions and the workflow mental model.', level: 'foundation', interaction: 'quiz_project', project: 'Operations intake workflow' },
-  { id: 2, slug: 'json', title: 'JSON', summary: 'Read, map and reshape the language of automation data.', level: 'foundation', interaction: 'self_run', project: 'Customer payload normalizer' },
+  { id: 2, slug: 'json', title: 'JSON', summary: 'Read, map and reshape the language of automation data.', level: 'foundation', interaction: 'webhook_lab', project: 'Order Payload Normalizer' },
   { id: 3, slug: 'rest-apis', title: 'REST APIs', summary: 'Understand methods, endpoints, headers, status codes and pagination.', level: 'foundation', interaction: 'webhook_lab', project: 'Public API data collector' },
   { id: 4, slug: 'webhooks', title: 'Webhooks', summary: 'Receive events and return predictable, testable responses.', level: 'foundation', interaction: 'webhook_lab', project: 'Lead capture endpoint' },
   { id: 5, slug: 'http-request', title: 'HTTP Request Node', summary: 'Connect n8n to almost any well-designed API.', level: 'foundation', interaction: 'webhook_lab', project: 'Multi-service enrichment flow' },

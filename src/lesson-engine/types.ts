@@ -1,7 +1,7 @@
 import type { LessonStatus } from '../components/Dashboard'
 
 export type StageState = 'not_started' | 'in_progress' | 'passed' | 'needs_attention'
-export type LiveResult = { id: string; label: string; passed: boolean; reached?: boolean; message: string; expected?: { route: string; status: string }; actual?: { route?: unknown; status?: unknown } | null }
+export type LiveResult = { id: string; label: string; passed: boolean; reached?: boolean; message: string; expected?: Record<string, unknown>; actual?: Record<string, unknown> | null }
 
 export type Lesson01Progress = {
   currentStage: string; viewedStage: string; stageStates: Record<string, StageState>

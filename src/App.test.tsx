@@ -42,4 +42,11 @@ describe('public learning experience', () => {
     expect(screen.getByText(/Taking you to login/i)).toBeInTheDocument()
     window.history.pushState({}, '', '/')
   })
+
+  it('protects a direct Lesson 02 route for unauthenticated learners', () => {
+    window.history.pushState({}, '', '/lessons/json')
+    render(<App />)
+    expect(screen.getByText(/Taking you to login/i)).toBeInTheDocument()
+    window.history.pushState({}, '', '/')
+  })
 })
