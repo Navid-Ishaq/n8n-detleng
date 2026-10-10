@@ -3,8 +3,8 @@ import type { Lesson01Progress } from './types'
 export const lesson01Stages = [
   { id: 'understand', label: 'Understand' }, { id: 'build-manually', label: 'Build Manually' },
   { id: 'run-yourself', label: 'Run It Yourself' }, { id: 'upgrade-webhook', label: 'Upgrade to Webhook' },
-  { id: 'test-event', label: 'First Live Event' }, { id: 'publish-connect', label: 'Publish & Connect' },
-  { id: 'live-break-fix', label: 'Live Tests + Break/Fix' }, { id: 'complete', label: 'Complete' },
+  { id: 'test-event', label: 'First Event' }, { id: 'publish-connect', label: 'Publish & Connect' },
+  { id: 'live-break-fix', label: 'Test + Break/Fix' }, { id: 'complete', label: 'Complete' },
 ] as const
 
 export const lesson01InitialProgress: Lesson01Progress = {

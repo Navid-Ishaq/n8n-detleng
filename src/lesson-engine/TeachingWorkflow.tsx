@@ -2,7 +2,7 @@ import { CheckCircle2, ChevronDown, Circle, Play, Radio, RotateCcw, Wrench } fro
 import { useState, type ReactNode } from 'react'
 
 export function TeachingWorkflow({ children, label }: { children: ReactNode; label: string }) {
-  return <section className="teaching-workflow" aria-label={label}><div className="teaching-workflow-label"><span>Detleng teaching twin</span><b>Practice here before you mirror it in n8n</b></div>{children}</section>
+  return <section className="teaching-workflow" aria-label={label}><div className="teaching-workflow-label"><span>Detleng teaching twin</span><b>Complete the learning here. Mirror it in n8n when you are ready.</b></div>{children}</section>
 }
 
 export function TeachingConnector({ label = 'data moves down' }: { label?: string }) { return <div className="teaching-connector" aria-label={label}><span>↓</span></div> }
