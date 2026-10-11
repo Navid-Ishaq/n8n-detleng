@@ -45,7 +45,7 @@ export const lessons: Lesson[] = [
   { id: 17, slug: 'docker-self-hosting', title: 'Docker & Self-Hosting', summary: 'Run n8n predictably with durable configuration and storage.', level: 'production', interaction: 'checklist', project: 'Local production stack' },
   { id: 18, slug: 'git-github', title: 'Git & GitHub', summary: 'Version workflow assets, docs and engineering decisions.', level: 'production', interaction: 'checklist', project: 'Portfolio repository' },
   { id: 19, slug: 'cloud-vps-deployment', title: 'Cloud / VPS Deployment', summary: 'Deploy secure, reachable automation infrastructure.', level: 'production', interaction: 'checklist', project: 'Hosted n8n environment' },
-  { id: 20, slug: 'monitoring-security-approval', title: 'Monitoring, Security & Human Approval', summary: 'Operate automation safely with observability and control.', level: 'production', interaction: 'external_trigger', project: 'Approval-gated operations flow' },
+  { id: 20, slug: 'monitoring-security-approval', title: 'Monitoring, Security & Human Approval', summary: 'Operate a live AI system with RAG, deterministic controls, human approval and database-backed evidence.', level: 'production', interaction: 'external_trigger', project: 'Production AI Operations System' },
 ]
 
 export const capstones = [

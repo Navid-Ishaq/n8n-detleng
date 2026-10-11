@@ -14,6 +14,8 @@ describe('public learning experience', () => {
 
     expect(screen.getAllByText(/n8n core/i).length).toBeGreaterThan(0)
     expect(screen.getByText('Monitoring, Security & Human Approval')).toBeInTheDocument()
+    expect(screen.getByText(/3 live lessons ready/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/FLAGSHIP LIVE/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Built by Muhammad Naveed Ishaque').length).toBeGreaterThan(0)
     expect(screen.getByText(/Independent learning project/)).toBeInTheDocument()
   })
@@ -52,6 +54,13 @@ describe('public learning experience', () => {
 
   it('protects the optional Lesson 02 visual guide', () => {
     window.history.pushState({}, '', '/lessons/json-visual-guide')
+    render(<App />)
+    expect(screen.getByText(/Taking you to login/i)).toBeInTheDocument()
+    window.history.pushState({}, '', '/')
+  })
+
+  it('protects the direct Lesson 20 flagship route', () => {
+    window.history.pushState({}, '', '/lessons/monitoring-security-approval')
     render(<App />)
     expect(screen.getByText(/Taking you to login/i)).toBeInTheDocument()
     window.history.pushState({}, '', '/')

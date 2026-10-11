@@ -3,6 +3,10 @@ import cors from 'cors'
 import helmet from 'helmet'
 import { rateLimit } from 'express-rate-limit'
 import { createClient } from '@supabase/supabase-js'
+import { createOpenAIService } from './capstone/openai.js'
+import { createControlledTools } from './capstone/tools.js'
+import { createCapstoneRepository } from './capstone/repository.js'
+import { createCapstoneService } from './capstone/service.js'
 
 const TEST_CASES = [
   { id: 'high', label: 'High Priority', input: { customerName: 'Ali Khan', department: 'Support', priority: 'high', budget: 1500 }, expected: { route: 'escalated', status: 'ready' } },
@@ -139,6 +143,11 @@ export function createApp(options = {}) {
   const supabase = options.supabase ?? createClient(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   })
+  const capstoneService = options.capstoneService ?? (env.SUPABASE_SECRET_KEY && env.OPENAI_API_KEY ? createCapstoneService({
+    repository: createCapstoneRepository(options.adminSupabase ?? createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { autoRefreshToken: false, persistSession: false } })),
+    ai: options.aiService ?? createOpenAIService({ apiKey: env.OPENAI_API_KEY, fetchImpl, model: env.OPENAI_MODEL || 'gpt-5-mini', embeddingModel: env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small' }),
+    tools: options.tools ?? createControlledTools(),
+  }) : null)
   const app = express()
 
   app.disable('x-powered-by')
@@ -159,10 +168,16 @@ export function createApp(options = {}) {
 
   async function authenticate(request, response) {
     const match = (request.get('authorization') ?? '').match(/^Bearer\s+(.+)$/i)
-    if (!match) { response.status(401).json({ error: 'Please log in to run a live test.' }); return false }
+    if (!match) { response.status(401).json({ error: 'Please log in to run a live test.' }); return null }
     const { data, error } = await supabase.auth.getUser(match[1])
-    if (error || !data?.user) { response.status(401).json({ error: 'Your session is no longer valid. Please log in again.' }); return false }
-    return true
+    if (error || !data?.user) { response.status(401).json({ error: 'Your session is no longer valid. Please log in again.' }); return null }
+    return data.user
+  }
+
+  function requireCapstone(response) {
+    if (capstoneService) return true
+    response.status(503).json({ error: 'The live capstone engine is not configured yet. No action was taken.' })
+    return false
   }
 
   app.post('/api/lessons/n8n-core/test-event', liveTestLimiter, async (request, response) => {
@@ -244,6 +259,55 @@ export function createApp(options = {}) {
     const results = []
     for (const testCase of cases) results.push(await runJsonWebhookTest(fetchImpl, validation.url, testCase, timeoutMs))
     return response.json({ passed: results.every((result) => result.passed), reached: results.every((result) => result.reached), lessonId: 'json', results, message: results.every((result) => result.passed) ? 'Original and changed JSON shapes both passed.' : 'The repair must keep the original shape working and support customer.fullName.' })
+  })
+
+  app.post('/api/lessons/production-capstone/runs', liveTestLimiter, async (request, response) => {
+    const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
+    try {
+      const attempt = Number.isInteger(request.body?.attempt) && request.body.attempt > 0 ? request.body.attempt : 1
+      const result = await capstoneService.start(user.id, attempt, request.body ?? {})
+      return response.status(202).json(result)
+    } catch (error) { return response.status(400).json({ error: error instanceof Error ? error.message : 'The capstone run could not start.' }) }
+  })
+
+  app.get('/api/lessons/production-capstone/runs/:runId', liveTestLimiter, async (request, response) => {
+    const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
+    try { const run = await capstoneService.get(user.id, request.params.runId); return run ? response.json({ run }) : response.status(404).json({ error: 'Run not found.' }) }
+    catch { return response.status(500).json({ error: 'The run status could not be loaded safely.' }) }
+  })
+
+  app.get('/api/lessons/production-capstone/attempts/:attempt/runs', liveTestLimiter, async (request, response) => {
+    const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
+    const attempt = Number(request.params.attempt); if (!Number.isInteger(attempt) || attempt < 1) return response.status(400).json({ error: 'Invalid attempt.' })
+    try { return response.json({ runs: await capstoneService.list(user.id, attempt) }) } catch { return response.status(500).json({ error: 'Attempt evidence could not be loaded.' }) }
+  })
+
+  app.post('/api/lessons/production-capstone/runs/:runId/approve', liveTestLimiter, async (request, response) => {
+    const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
+    try { const run = await capstoneService.decide(user.id, request.params.runId, 'approved', request.body?.reason); return run ? response.json({ run }) : response.status(404).json({ error: 'Run not found.' }) }
+    catch (error) { return response.status(409).json({ error: error instanceof Error ? error.message : 'Approval could not be recorded.' }) }
+  })
+
+  app.post('/api/lessons/production-capstone/runs/:runId/reject', liveTestLimiter, async (request, response) => {
+    const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
+    try { const run = await capstoneService.decide(user.id, request.params.runId, 'rejected', request.body?.reason); return run ? response.json({ run }) : response.status(404).json({ error: 'Run not found.' }) }
+    catch (error) { return response.status(409).json({ error: error instanceof Error ? error.message : 'Rejection could not be recorded.' }) }
+  })
+
+  app.post('/api/lessons/production-capstone/runs/:runId/verify', liveTestLimiter, async (request, response) => {
+    const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
+    try { const verification = await capstoneService.verify(user.id, request.params.runId); return verification ? response.json({ verification }) : response.status(404).json({ error: 'Run not found.' }) }
+    catch { return response.status(500).json({ error: 'Verification could not be completed.' }) }
+  })
+
+  app.get('/api/lessons/production-capstone/monitoring', liveTestLimiter, async (request, response) => {
+    const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
+    try { return response.json({ monitoring: await capstoneService.monitoring(user.id) }) } catch { return response.status(500).json({ error: 'Monitoring could not be loaded.' }) }
+  })
+
+  app.post('/api/lessons/production-capstone/knowledge/seed', liveTestLimiter, async (request, response) => {
+    const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
+    try { return response.json({ embedded: await capstoneService.seedKnowledge(), message: 'Fixture knowledge embeddings are ready.' }) } catch { return response.status(500).json({ error: 'Knowledge embeddings could not be prepared.' }) }
   })
 
   app.use((_request, response) => response.status(404).json({ error: 'Endpoint not found.' }))

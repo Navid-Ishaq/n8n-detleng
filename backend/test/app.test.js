@@ -216,3 +216,27 @@ test('JSON repair requires both original and renamed customer shapes', async () 
     const body = await response.json(); assert.equal(body.passed, true); assert.deepEqual(body.results.map((item) => item.id), ['original-shape', 'renamed-shape'])
   })
 })
+
+test('capstone run creation uses authenticated identity and ignores spoofed user_id', async () => {
+  const calls = []
+  const capstoneService = { start: async (...args) => { calls.push(args); return { runId: 'run-1', status: 'queued' } } }
+  const supabase = { auth: { getUser: async () => ({ data: { user: { id: 'authenticated-user' } }, error: null }) } }
+  const app = createApp({ env, supabase, capstoneService })
+  await withServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/lessons/production-capstone/runs`, { method: 'POST', headers: { authorization: 'Bearer valid', 'content-type': 'application/json' }, body: JSON.stringify({ user_id: 'spoofed-user', scenarioKey: 'A', attempt: 1 }) })
+    assert.equal(response.status, 202)
+    assert.equal(calls[0][0], 'authenticated-user')
+    assert.notEqual(calls[0][0], 'spoofed-user')
+  })
+})
+
+test('capstone ownership miss returns 404 without exposing another run', async () => {
+  const capstoneService = { get: async () => null }
+  const supabase = { auth: { getUser: async () => ({ data: { user: { id: 'user-one' } }, error: null }) } }
+  const app = createApp({ env, supabase, capstoneService })
+  await withServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/lessons/production-capstone/runs/other-users-run`, { headers: { authorization: 'Bearer valid' } })
+    assert.equal(response.status, 404)
+    assert.deepEqual(await response.json(), { error: 'Run not found.' })
+  })
+})

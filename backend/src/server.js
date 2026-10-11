@@ -1,6 +1,6 @@
 import { createApp } from './app.js'
 
-const required = ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY']
+const required = ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_SECRET_KEY', 'OPENAI_API_KEY']
 const missing = required.filter((name) => !process.env[name])
 if (missing.length) {
   console.error(`Missing required environment variables: ${missing.join(', ')}`)
