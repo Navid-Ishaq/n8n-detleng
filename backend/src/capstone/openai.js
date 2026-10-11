@@ -19,7 +19,18 @@ export function createOpenAIService({ apiKey, fetchImpl = globalThis.fetch, mode
     async classify(input) {
       const payload = await post('responses', {
         model,
-        input: [{ role: 'system', content: 'Classify an operations request. You propose; deterministic rules remain authoritative.' }, { role: 'user', content: JSON.stringify(input) }],
+        input: [{
+          role: 'system',
+          content: [
+            'Classify this bounded portfolio-lab operations request.',
+            'Use the following rubric consistently:',
+            '- A normal support_update with amount 0 is low risk, needs no knowledge, and suggests record_support_note.',
+            '- A knowledge_question is low risk, needs knowledge, and suggests answer_with_evidence.',
+            '- A refund_request, account_change, amount above 100, or high priority is high risk.',
+            '- Use ambiguous only when the supplied fields genuinely conflict or are insufficient.',
+            'You only propose. Deterministic server rules remain authoritative and may require human approval.',
+          ].join('\n'),
+        }, { role: 'user', content: JSON.stringify(input) }],
         text: { format: { type: 'json_schema', name: 'operations_classification', strict: true, schema: { type: 'object', additionalProperties: false, required: ['classification','intent','suggestedAction','suggestedRisk','needsKnowledge'], properties: { classification: { type: 'string' }, intent: { type: 'string' }, suggestedAction: { type: 'string' }, suggestedRisk: { type: 'string', enum: ['low','high','ambiguous'] }, needsKnowledge: { type: 'boolean' } } } } },
       })
       let parsed

@@ -115,6 +115,19 @@ create policy "Learners read own capstone actions" on public.capstone_actions fo
 grant select on public.capstone_runs, public.capstone_events, public.capstone_approvals, public.capstone_actions to authenticated;
 revoke all on public.knowledge_documents, public.knowledge_chunks from anon, authenticated;
 
+-- The Render API uses the server-only Supabase secret key. Declare its
+-- privileges explicitly instead of relying on project default grants.
+grant usage on schema public, extensions to service_role;
+grant select, insert, update, delete on
+  public.capstone_runs,
+  public.capstone_events,
+  public.capstone_approvals,
+  public.capstone_actions,
+  public.knowledge_documents,
+  public.knowledge_chunks
+to service_role;
+grant usage, select on sequence public.capstone_events_id_seq to service_role;
+
 create or replace function public.match_capstone_knowledge(
   query_embedding extensions.vector(1536),
   match_threshold double precision default 0.45,

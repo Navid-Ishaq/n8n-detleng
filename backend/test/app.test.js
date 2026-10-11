@@ -240,3 +240,26 @@ test('capstone ownership miss returns 404 without exposing another run', async (
     assert.deepEqual(await response.json(), { error: 'Run not found.' })
   })
 })
+
+test('capstone status polling does not consume the mutation rate limit', async () => {
+  const run = { id: 'run-1', status: 'processing' }
+  const capstoneService = {
+    get: async () => run,
+    start: async () => ({ runId: 'run-2', status: 'queued' }),
+  }
+  const supabase = { auth: { getUser: async () => ({ data: { user: { id: 'learner-1' } }, error: null }) } }
+  const app = createApp({ env, supabase, capstoneService })
+  await withServer(app, async (baseUrl) => {
+    const headers = { authorization: 'Bearer valid', 'content-type': 'application/json' }
+    for (let requestNumber = 0; requestNumber < 12; requestNumber += 1) {
+      const response = await fetch(`${baseUrl}/api/lessons/production-capstone/runs/run-1`, { headers })
+      assert.equal(response.status, 200)
+    }
+    const response = await fetch(`${baseUrl}/api/lessons/production-capstone/runs`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ scenarioKey: 'A', attempt: 1 }),
+    })
+    assert.equal(response.status, 202)
+  })
+})
