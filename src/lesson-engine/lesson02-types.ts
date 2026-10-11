@@ -4,12 +4,19 @@ export type Lesson02Progress = {
   currentStage: string
   viewedStage: string
   stageStates: Record<string, StageState>
-  workflowCreated: boolean
-  samplePayloadRun: boolean
+  shapeRead: boolean
+  payloadCaptured: boolean
+  nestedFieldsBuilt: boolean
+  arraysExplored: boolean
   normalizerBuilt: boolean
-  dynamicTestPassed: boolean
-  breakRepairCompleted: boolean
-  workflowExported: boolean
+  publishUnderstood: boolean
+  liveChallengePracticed: boolean
+  productionConnected: boolean
+  normalLivePassed: boolean
+  variableLivePassed: boolean
+  missingCountryLivePassed: boolean
+  breakObserved: boolean
+  repairPassed: boolean
   completed: boolean
   lastNeedsAttention: boolean
   revision: number

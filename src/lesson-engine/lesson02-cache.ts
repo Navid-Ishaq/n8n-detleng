@@ -6,10 +6,27 @@ export function lesson02CacheKey(userId: string) { return `detleng:lesson:2:${us
 export function normalizeLesson02Progress(value: unknown): Lesson02Progress {
   if (!value || typeof value !== 'object') return structuredClone(lesson02InitialProgress)
   const saved = value as Partial<Lesson02Progress>
-  const knownStages = new Set(['create-workflow','sample-payload','normalize','dynamic-test','break-repair','export','complete'])
-  const currentStage = knownStages.has(saved.currentStage || '') ? saved.currentStage! : saved.completed ? 'complete' : 'create-workflow'
-  const viewedStage = knownStages.has(saved.viewedStage || '') ? saved.viewedStage! : currentStage
-  return { ...structuredClone(lesson02InitialProgress), ...saved, currentStage, viewedStage, stageStates: { ...lesson02InitialProgress.stageStates, ...saved.stageStates } }
+  const knownStages = new Set(['read-shape','capture-payload','nested-fields','arrays','build-normalizer','publish-connect','live-challenge','complete'])
+  const legacyStage: Record<string,string> = { 'create-workflow':'read-shape', 'sample-payload':'capture-payload', normalize:'nested-fields', 'dynamic-test':'build-normalizer', 'break-repair':'live-challenge', export:'publish-connect' }
+  const mappedCurrent = legacyStage[saved.currentStage || ''] || saved.currentStage
+  const mappedViewed = legacyStage[saved.viewedStage || ''] || saved.viewedStage
+  const currentStage = knownStages.has(mappedCurrent || '') ? mappedCurrent! : saved.completed ? 'complete' : 'read-shape'
+  const viewedStage = knownStages.has(mappedViewed || '') ? mappedViewed! : currentStage
+  const migrated = { ...structuredClone(lesson02InitialProgress), ...saved, currentStage, viewedStage } as Lesson02Progress
+  if ('workflowCreated' in saved) migrated.shapeRead ||= Boolean((saved as Record<string,unknown>).workflowCreated)
+  if ('samplePayloadRun' in saved) migrated.payloadCaptured ||= Boolean((saved as Record<string,unknown>).samplePayloadRun)
+  if ('dynamicTestPassed' in saved) migrated.arraysExplored ||= Boolean((saved as Record<string,unknown>).dynamicTestPassed)
+  if ('breakRepairCompleted' in saved) migrated.liveChallengePracticed ||= Boolean((saved as Record<string,unknown>).breakRepairCompleted)
+  migrated.stageStates = { ...lesson02InitialProgress.stageStates, ...saved.stageStates }
+  return migrated
+}
+
+export function lesson02AttemptCacheKey(userId: string, attemptNumber: number) { return `${lesson02CacheKey(userId)}:attempt:${attemptNumber}` }
+export function readLesson02AttemptCache(userId: string, attemptNumber: number): CachedLesson02Progress | null {
+  try { const raw = window.localStorage.getItem(lesson02AttemptCacheKey(userId, attemptNumber)); if (!raw) return null; const parsed = JSON.parse(raw) as Partial<CachedLesson02Progress>; return { progress: normalizeLesson02Progress(parsed.progress), syncPending: parsed.syncPending === true } } catch { return null }
+}
+export function writeLesson02AttemptCache(userId: string, attemptNumber: number, progress: Lesson02Progress, syncPending: boolean) {
+  try { window.localStorage.setItem(lesson02AttemptCacheKey(userId, attemptNumber), JSON.stringify({ progress, syncPending })) } catch { /* Supabase remains authoritative. */ }
 }
 export function readLesson02Cache(userId: string): CachedLesson02Progress | null {
   try { const raw = window.localStorage.getItem(lesson02CacheKey(userId)); if (!raw) return null; const parsed = JSON.parse(raw) as Partial<CachedLesson02Progress>; return { progress: normalizeLesson02Progress(parsed.progress), syncPending: parsed.syncPending === true } } catch { return null }

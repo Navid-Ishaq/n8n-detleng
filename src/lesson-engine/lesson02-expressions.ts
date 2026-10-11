@@ -1,9 +1,9 @@
 export const lesson02Expressions = {
-  name: "{{ $json.customer.name || $json.customer.fullName || 'Unknown' }}",
-  country: "{{ $json.customer.country || 'Unknown' }}",
-  id: '{{ $json.order.id }}',
-  count: '{{ Array.isArray($json.order.items) ? $json.order.items.length : 0 }}',
-  total: '{{ Array.isArray($json.order.items) ? $json.order.items.reduce((total, item) => total + (item.qty * item.price), 0) : 0 }}',
+  name: '{{ $json.body.customer.name ?? $json.body.customer.fullName }}',
+  country: '{{ $json.body.customer.country ?? null }}',
+  id: '{{ $json.body.order.id }}',
+  count: '{{ $json.body.order.items.length }}',
+  total: '{{ $json.body.order.items.reduce((sum, item) => sum + (item.qty * item.price), 0) }}',
 }
 
 export const lesson02NormalPayload = `{
