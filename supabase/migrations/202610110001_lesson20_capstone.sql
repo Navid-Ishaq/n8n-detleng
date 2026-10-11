@@ -102,6 +102,11 @@ alter table public.capstone_actions enable row level security;
 alter table public.knowledge_documents enable row level security;
 alter table public.knowledge_chunks enable row level security;
 
+drop policy if exists "Learners read own capstone runs" on public.capstone_runs;
+drop policy if exists "Learners read own capstone events" on public.capstone_events;
+drop policy if exists "Learners read own capstone approvals" on public.capstone_approvals;
+drop policy if exists "Learners read own capstone actions" on public.capstone_actions;
+
 create policy "Learners read own capstone runs" on public.capstone_runs for select to authenticated using ((select auth.uid()) = user_id);
 create policy "Learners read own capstone events" on public.capstone_events for select to authenticated using (exists (select 1 from public.capstone_runs r where r.id = run_id and r.user_id = (select auth.uid())));
 create policy "Learners read own capstone approvals" on public.capstone_approvals for select to authenticated using ((select auth.uid()) = user_id);
@@ -118,11 +123,13 @@ create or replace function public.match_capstone_knowledge(
 returns table (chunk_id uuid, source_id text, title text, content text, similarity double precision)
 language sql stable security definer set search_path = ''
 as $$
-  select c.id, d.source_id, d.title, c.content, 1 - (c.embedding <=> query_embedding)
+  select c.id, d.source_id, d.title, c.content,
+         1 - (c.embedding OPERATOR(extensions.<=>) query_embedding)
   from public.knowledge_chunks c
   join public.knowledge_documents d on d.id = c.document_id
-  where c.embedding is not null and 1 - (c.embedding <=> query_embedding) >= match_threshold
-  order by c.embedding <=> query_embedding
+  where c.embedding is not null
+    and 1 - (c.embedding OPERATOR(extensions.<=>) query_embedding) >= match_threshold
+  order by c.embedding OPERATOR(extensions.<=>) query_embedding
   limit least(greatest(match_count, 1), 8);
 $$;
 
