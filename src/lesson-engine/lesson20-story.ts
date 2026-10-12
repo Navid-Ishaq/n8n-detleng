@@ -94,7 +94,8 @@ export function buildExecutiveSummary(run:CapstoneRun):string {
   const rules=run.approvalRequired?' Business rules required human approval.':' Business rules confirmed that human approval was not required.'
   const human=run.decision==='approved'?' An authenticated learner approved the proposal.':run.decision==='rejected'?' An authenticated learner rejected the proposal.':''
   const actions=run.actions.filter((action)=>action.status==='executed').length
-  const outcome=run.decision==='knowledge_insufficient'?' Approved evidence was insufficient, so the system refused to invent an answer and executed zero actions.':run.status==='rejected'?` No action executed, and the run closed safely.`:run.status==='failed'?' The run failed safely and recorded the failure evidence.':run.status==='pending_approval'?' The action remains blocked at the human approval boundary.':` ${actions} sandbox action${actions===1?'':'s'} executed and ${actions} receipt${actions===1?' was':'s were'} recorded.`
+  const knowledgeRefused=run.requestType==='knowledge_question'&&run.events.some((event)=>(event.type==='knowledge_retrieved'||event.type==='knowledge_insufficient')&&event.outcome==='blocked')
+  const outcome=knowledgeRefused?' Approved evidence was insufficient, so the system refused to invent an answer and executed zero actions.':run.status==='rejected'?` No action executed, and the run closed safely.`:run.status==='failed'?' The run failed safely and recorded the failure evidence.':run.status==='pending_approval'?' The action remains blocked at the human approval boundary.':` ${actions} sandbox action${actions===1?'':'s'} executed and ${actions} receipt${actions===1?' was':'s were'} recorded.`
   const duration=run.durationMs==null?'':` The recorded process took ${(run.durationMs/1000).toFixed(run.durationMs<10000?1:0)} seconds.`
   return `${request} was received from an authenticated learner. AI suggested ${aiRisk} risk.${knowledge}${rules}${human}${outcome}${duration}`
 }
@@ -110,7 +111,7 @@ const proofByScenario:Record<string,string>={
 
 export function learningOutcome(run:CapstoneRun,verified:boolean){
   if(verified)return {tone:'passed',title:`Scenario ${run.scenarioKey} learning contract verified`,body:proofByScenario[run.scenarioKey]??'You produced verified operational evidence.'}
-  if(run.scenarioKey==='B')return run.decision==='knowledge_insufficient'
+  if(run.scenarioKey==='B')return run.events.some((event)=>(event.type==='knowledge_retrieved'||event.type==='knowledge_insufficient')&&event.outcome==='blocked')
     ?{tone:'correct',title:'Safe refusal ready for verification',body:'Approved evidence was unavailable, so the system refused to invent a dress-code answer and executed zero actions. Verify this test, then complete the remaining knowledge contracts.'}
     :{tone:'pending',title:'Knowledge source ready for verification',body:'Confirm that this answer cites the expected approved source, verify this test, then continue until all four knowledge contracts are complete.'}
   if(run.scenarioKey==='E'&&run.status==='rejected')return {tone:'correct',title:'Security correct · learning contract not yet satisfied',body:'Rejection correctly prevented the action and closed the run safely. Scenario E specifically tests the approval path, so run E again and approve it to prove exactly-once execution.'}

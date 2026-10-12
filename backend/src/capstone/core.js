@@ -119,8 +119,7 @@ export function verifyKnowledgeRun(runView) {
   const events = runView.events ?? []
   const actions = runView.actions?.filter((item) => item.status === 'executed') ?? []
   if (knowledgeCase.key === 'unsupported') {
-    const refusal = runView.decision === 'knowledge_insufficient'
-      && actions.length === 0
+    const refusal = actions.length === 0
       && events.some((event) => (event.type === 'knowledge_retrieved' || event.type === 'knowledge_insufficient') && event.outcome === 'blocked')
     return { passed: runView.status === 'completed' && refusal, caseKey: knowledgeCase.key, title: knowledgeCase.title, expectedSource: null }
   }

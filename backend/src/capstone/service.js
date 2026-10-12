@@ -46,7 +46,7 @@ export function createCapstoneService({ repository, ai, tools, now = () => new D
 
       if (input.requestType === 'knowledge_question' && !ragAnswer?.grounded) {
         const finished = now(); const duration = Math.max(0, finished.getTime() - started.getTime())
-        await repository.updateRun(run.id, { status: 'completed', decision: 'knowledge_insufficient', action_state: 'blocked', completed_at: finished.toISOString(), duration_ms: duration })
+        await repository.updateRun(run.id, { status: 'completed', action_state: 'blocked', completed_at: finished.toISOString(), duration_ms: duration })
         await event(run.id, 'run_completed', 'Run closed safely because approved knowledge was insufficient. No action executed.', { durationMs: duration }, 'system', null, 'blocked')
         return
       }

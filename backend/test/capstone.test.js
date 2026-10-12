@@ -62,7 +62,8 @@ test('all supported knowledge questions verify against their own source', () => 
 
 test('unsupported dress-code question passes only through a stored safe refusal', () => {
   assert.equal(knowledgeCaseForQuestion('What is the office dress code?').key,'unsupported')
-  const safe = {status:'completed',decision:'knowledge_insufficient',input:{question:'What is the office dress code?'},actions:[],events:[{type:'knowledge_retrieved',outcome:'blocked'}]}
+  const safe = {status:'completed',decision:null,input:{question:'What is the office dress code?'},actions:[],events:[{type:'knowledge_retrieved',outcome:'blocked'}]}
   assert.equal(verifyKnowledgeRun(safe).passed,true)
+  assert.equal(verifyKnowledgeRun({...safe,status:'failed'}).passed,false)
   assert.equal(verifyKnowledgeRun({...safe,actions:[{status:'executed'}]}).passed,false)
 })
