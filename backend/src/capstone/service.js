@@ -1,4 +1,4 @@
-import { deterministicRisk, makeReceipt, safeRunView, validateRunInput, verifyScenario } from './core.js'
+import { KNOWLEDGE_CASES, deterministicRisk, knowledgeCaseForQuestion, makeReceipt, safeRunView, validateRunInput, verifyKnowledgeRun, verifyScenario } from './core.js'
 
 const safeSummary = (input) => ({ requestType: input.requestType, priority: input.priority, amount: input.amount, question: input.question, failureCount: input.failureCount })
 
@@ -29,7 +29,10 @@ export function createCapstoneService({ repository, ai, tools, now = () => new D
         const matches = await repository.matchKnowledge(queryEmbedding)
         const evidence = matches.map(({ source_id, title, content, similarity }) => ({ sourceId: source_id, title, content, similarity }))
         if (evidence.length) {
-          ragAnswer = await ai.answer(input.question, evidence)
+          const knowledgeCase = knowledgeCaseForQuestion(input.question)
+          ragAnswer = knowledgeCase?.expectedSource === null
+            ? { answer: 'Available evidence is insufficient.', sourceIds: [], grounded: false }
+            : await ai.answer(input.question, evidence)
           citations = ragAnswer.sourceIds.filter((id) => evidence.some((item) => item.sourceId === id))
           ragUsed = true
           await event(run.id, 'knowledge_retrieved', 'Approved knowledge evidence retrieved.', { sources: citations, answer: ragAnswer.answer, grounded: ragAnswer.grounded }, 'tool', null, ragAnswer.grounded ? 'passed' : 'blocked')
@@ -40,6 +43,13 @@ export function createCapstoneService({ repository, ai, tools, now = () => new D
       const risk = deterministicRisk(input, classification)
       await event(run.id, 'risk_evaluated', 'Deterministic rules produced the final system decision.', risk, 'system', null, risk.approvalRequired ? 'blocked' : 'passed')
       run = await repository.updateRun(run.id, { classification: { ...classification, ragAnswer, risk }, ai_used: true, rag_used: ragUsed, citations, risk_level: risk.finalRisk, approval_required: risk.approvalRequired })
+
+      if (input.requestType === 'knowledge_question' && !ragAnswer?.grounded) {
+        const finished = now(); const duration = Math.max(0, finished.getTime() - started.getTime())
+        await repository.updateRun(run.id, { status: 'completed', decision: 'knowledge_insufficient', action_state: 'blocked', completed_at: finished.toISOString(), duration_ms: duration })
+        await event(run.id, 'run_completed', 'Run closed safely because approved knowledge was insufficient. No action executed.', { durationMs: duration }, 'system', null, 'blocked')
+        return
+      }
 
       if (input.failureCount > 0) {
         for (let attempt = 1; attempt <= input.failureCount + 1; attempt += 1) {
@@ -100,7 +110,26 @@ export function createCapstoneService({ repository, ai, tools, now = () => new D
       }
       return this.get(userId, runId)
     },
-    async verify(userId, runId) { const view = await this.get(userId, runId); return view ? verifyScenario(view) : null },
+    async verify(userId, runId) {
+      const view = await this.get(userId, runId)
+      if (!view) return null
+      if (view.scenarioKey !== 'B') return verifyScenario(view)
+      const rows = await repository.listAttemptRuns(userId, view.lessonAttemptNumber)
+      const views = await Promise.all(rows.filter((row) => row.scenario_key === 'B').map((row) => this.get(userId, row.id)))
+      const passedCases = new Map()
+      for (const candidate of views.filter(Boolean)) {
+        const result = verifyKnowledgeRun(candidate)
+        if (result.passed) passedCases.set(result.caseKey, result)
+      }
+      const current = verifyKnowledgeRun(view)
+      const cases = Object.entries(KNOWLEDGE_CASES).map(([key, value]) => ({ key, title: value.title, question: value.question, expectedSource: value.expectedSource, passed: passedCases.has(key) }))
+      return {
+        passed: cases.every((item) => item.passed),
+        scenarioKey: 'B',
+        checks: { B: cases.every((item) => item.passed) },
+        knowledgeProgress: { completed: cases.filter((item) => item.passed).length, total: cases.length, currentCaseKey: current.caseKey, currentCasePassed: current.passed, cases },
+      }
+    },
     async monitoring(userId) { return repository.monitoring(userId) },
     _executeRun: executeRun,
   }

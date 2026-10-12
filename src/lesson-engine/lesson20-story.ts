@@ -60,7 +60,7 @@ function stageState(run:CapstoneRun,definition:StageDefinition,event?:CapstoneEv
 }
 
 function stageCopy(run:CapstoneRun,definition:StageDefinition,state:StoryState,event?:CapstoneEvent):Pick<StoryStage,'systemEvent'|'commentary'|'businessMeaning'> {
-  if(event?.type==='knowledge_insufficient')return {systemEvent:event.message,commentary:'The search did not find sufficiently strong approved evidence, so the system refused to invent a grounded answer.',businessMeaning:'Missing evidence produced a safe stop instead of an unsupported business answer.'}
+  if(definition.key==='knowledge'&&event?.outcome==='blocked')return {systemEvent:event.message,commentary:'The search did not find sufficiently strong approved evidence, so the system refused to invent a grounded answer.',businessMeaning:'Missing evidence produced a safe stop instead of an unsupported business answer.'}
   if(event?.type==='human_approved')return {systemEvent:'Authenticated learner approved the proposed action.',commentary:'A signed-in human accepted the proposal. The system may now attempt the one authorised sandbox action.',businessMeaning:'A named human accepted responsibility, and the approval remains part of the permanent evidence trail.'}
   if(event?.type==='human_rejected')return {systemEvent:'Authenticated learner rejected the proposed action.',commentary:'A signed-in human rejected the proposal. The execution permission is now closed and the action cannot run.',businessMeaning:'Human authority stopped the sensitive operation, while preserving proof of the decision.'}
   if(event?.type==='run_rejected')return {systemEvent:'Run closed safely after human rejection.',commentary:'The run is complete. No action executed, and the rejected proposal can no longer be resumed.',businessMeaning:'This is an operationally correct security outcome even when an approval-path learning contract is not satisfied.'}
@@ -94,14 +94,14 @@ export function buildExecutiveSummary(run:CapstoneRun):string {
   const rules=run.approvalRequired?' Business rules required human approval.':' Business rules confirmed that human approval was not required.'
   const human=run.decision==='approved'?' An authenticated learner approved the proposal.':run.decision==='rejected'?' An authenticated learner rejected the proposal.':''
   const actions=run.actions.filter((action)=>action.status==='executed').length
-  const outcome=run.status==='rejected'?` No action executed, and the run closed safely.`:run.status==='failed'?' The run failed safely and recorded the failure evidence.':run.status==='pending_approval'?' The action remains blocked at the human approval boundary.':` ${actions} sandbox action${actions===1?'':'s'} executed and ${actions} receipt${actions===1?' was':'s were'} recorded.`
+  const outcome=run.decision==='knowledge_insufficient'?' Approved evidence was insufficient, so the system refused to invent an answer and executed zero actions.':run.status==='rejected'?` No action executed, and the run closed safely.`:run.status==='failed'?' The run failed safely and recorded the failure evidence.':run.status==='pending_approval'?' The action remains blocked at the human approval boundary.':` ${actions} sandbox action${actions===1?'':'s'} executed and ${actions} receipt${actions===1?' was':'s were'} recorded.`
   const duration=run.durationMs==null?'':` The recorded process took ${(run.durationMs/1000).toFixed(run.durationMs<10000?1:0)} seconds.`
   return `${request} was received from an authenticated learner. AI suggested ${aiRisk} risk.${knowledge}${rules}${human}${outcome}${duration}`
 }
 
 const proofByScenario:Record<string,string>={
   A:'You proved that a low-risk request can pass independent rules and execute once without unnecessary human approval.',
-  B:'You proved that an AI response can retrieve and cite approved company knowledge before acting.',
+  B:'You proved correct retrieval across three approved policies and a safe refusal when the requested knowledge did not exist.',
   C:'You proved that temporary external-service failures can be retried, recovered and preserved as operational evidence.',
   D:'You proved that a sensitive request stops before execution and remains safely pending for human authority.',
   E:'You proved that explicit human approval can unlock exactly one sandbox action and one receipt.',
@@ -110,6 +110,9 @@ const proofByScenario:Record<string,string>={
 
 export function learningOutcome(run:CapstoneRun,verified:boolean){
   if(verified)return {tone:'passed',title:`Scenario ${run.scenarioKey} learning contract verified`,body:proofByScenario[run.scenarioKey]??'You produced verified operational evidence.'}
+  if(run.scenarioKey==='B')return run.decision==='knowledge_insufficient'
+    ?{tone:'correct',title:'Safe refusal ready for verification',body:'Approved evidence was unavailable, so the system refused to invent a dress-code answer and executed zero actions. Verify this test, then complete the remaining knowledge contracts.'}
+    :{tone:'pending',title:'Knowledge source ready for verification',body:'Confirm that this answer cites the expected approved source, verify this test, then continue until all four knowledge contracts are complete.'}
   if(run.scenarioKey==='E'&&run.status==='rejected')return {tone:'correct',title:'Security correct · learning contract not yet satisfied',body:'Rejection correctly prevented the action and closed the run safely. Scenario E specifically tests the approval path, so run E again and approve it to prove exactly-once execution.'}
   if(run.scenarioKey==='F'&&run.status==='completed')return {tone:'correct',title:'Operation authorised · learning contract not yet satisfied',body:'The approved action completed correctly, but Scenario F tests the rejection path. Run F again and reject it to prove that execution remains impossible.'}
   if(run.status==='failed')return {tone:'failed',title:'Unexpected failure recorded safely',body:'The system preserved failure evidence and prevented unsafe execution. Review the audit story before starting a fresh run.'}
@@ -136,5 +139,6 @@ const auditMeanings:Record<string,string>={
 }
 
 export function auditBusinessMeaning(event:CapstoneEvent){
+  if(event.type==='knowledge_retrieved'&&event.outcome==='blocked')return 'Approved evidence was unavailable, so the system refused to invent an answer and closed this knowledge path safely.'
   return auditMeanings[event.type]??'This event is part of the permanent evidence trail for the run.'
 }
