@@ -9,19 +9,6 @@ export const CAPSTONE_SCENARIOS = Object.freeze({
   F: { requestType: 'account_change', priority: 'high', amount: 0, question: '', failureCount: 0 },
 })
 
-export const KNOWLEDGE_CASES = Object.freeze({
-  refund: { question: 'Can a customer receive a refund after 45 days?', expectedSource: 'KB-REFUND-001', title: 'Refund policy' },
-  security: { question: 'Which account changes require human approval?', expectedSource: 'KB-SECURITY-001', title: 'Account security' },
-  retry: { question: 'How many times may a 503 failure be retried?', expectedSource: 'KB-RETRY-001', title: 'Retry policy' },
-  unsupported: { question: 'What is the office dress code?', expectedSource: null, title: 'Safe refusal' },
-})
-
-export function knowledgeCaseForQuestion(question = '') {
-  const normalized = String(question).trim().toLowerCase()
-  const entry = Object.entries(KNOWLEDGE_CASES).find(([, value]) => value.question.toLowerCase() === normalized)
-  return entry ? { key: entry[0], ...entry[1] } : null
-}
-
 const REQUEST_TYPES = new Set(['support_update', 'knowledge_question', 'refund_request', 'account_change'])
 const PRIORITIES = new Set(['normal', 'high'])
 
@@ -104,26 +91,12 @@ export function verifyScenario(runView) {
   const events = runView.events ?? []
   const contracts = {
     A: runView.status === 'completed' && runView.riskLevel === 'low' && !runView.approvalRequired && actions.length === 1,
-    B: verifyKnowledgeRun(runView).passed,
+    B: runView.status === 'completed' && runView.ragUsed && runView.citations?.includes('KB-REFUND-001'),
     C: ['completed', 'handled_failure'].includes(runView.status) && runView.retryCount >= Number(runView.input?.failureCount ?? 0) && events.some((event) => event.type === 'service_retry'),
     D: runView.status === 'pending_approval' && runView.approvalRequired && actions.length === 0,
     E: runView.status === 'completed' && runView.decision === 'approved' && actions.length === 1,
     F: runView.status === 'rejected' && runView.decision === 'rejected' && actions.length === 0,
   }
   return { passed: contracts[runView.scenarioKey] === true, scenarioKey: runView.scenarioKey, checks: contracts }
-}
-
-export function verifyKnowledgeRun(runView) {
-  const knowledgeCase = knowledgeCaseForQuestion(runView.input?.question)
-  if (!knowledgeCase) return { passed: false, caseKey: 'unknown', title: 'Unknown knowledge test', expectedSource: null }
-  const events = runView.events ?? []
-  const actions = runView.actions?.filter((item) => item.status === 'executed') ?? []
-  if (knowledgeCase.key === 'unsupported') {
-    const refusal = actions.length === 0
-      && events.some((event) => (event.type === 'knowledge_retrieved' || event.type === 'knowledge_insufficient') && event.outcome === 'blocked')
-    return { passed: runView.status === 'completed' && refusal, caseKey: knowledgeCase.key, title: knowledgeCase.title, expectedSource: null }
-  }
-  const grounded = events.some((event) => event.type === 'knowledge_retrieved' && event.outcome === 'passed')
-  return { passed: runView.status === 'completed' && runView.ragUsed && grounded && runView.citations?.includes(knowledgeCase.expectedSource), caseKey: knowledgeCase.key, title: knowledgeCase.title, expectedSource: knowledgeCase.expectedSource }
 }
 

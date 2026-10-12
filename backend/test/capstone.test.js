@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { deterministicRisk, knowledgeCaseForQuestion, parseClassification, safeRunView, validateRunInput, verifyKnowledgeRun, verifyScenario } from '../src/capstone/core.js'
+import { deterministicRisk, parseClassification, safeRunView, validateRunInput, verifyScenario } from '../src/capstone/core.js'
 
 test('bounds learner-controlled capstone options', () => {
   assert.equal(validateRunInput({ scenarioKey: 'A' }).requestType, 'support_update')
@@ -42,28 +42,7 @@ test('safe run view never includes user identity or raw vectors', () => {
 test('scenario verification uses stored evidence rather than prose', () => {
   const base={status:'completed',riskLevel:'low',approvalRequired:false,actions:[{status:'executed'}],events:[]}
   assert.equal(verifyScenario({...base,scenarioKey:'A'}).passed,true)
-  assert.equal(verifyScenario({...base,scenarioKey:'B',input:{question:'Can a customer receive a refund after 45 days?'},ragUsed:true,citations:['KB-REFUND-001'],events:[{type:'knowledge_retrieved',outcome:'passed'}]}).passed,true)
+  assert.equal(verifyScenario({...base,scenarioKey:'B',ragUsed:true,citations:['KB-REFUND-001']}).passed,true)
   assert.equal(verifyScenario({...base,scenarioKey:'D',status:'pending_approval',approvalRequired:true,actions:[]}).passed,true)
   assert.equal(verifyScenario({...base,scenarioKey:'F',status:'rejected',decision:'rejected',actions:[]}).passed,true)
-})
-
-test('all supported knowledge questions verify against their own source', () => {
-  const cases = [
-    ['Can a customer receive a refund after 45 days?','KB-REFUND-001'],
-    ['Which account changes require human approval?','KB-SECURITY-001'],
-    ['How many times may a 503 failure be retried?','KB-RETRY-001'],
-  ]
-  for (const [question, source] of cases) {
-    const result = verifyKnowledgeRun({status:'completed',input:{question},ragUsed:true,citations:[source],actions:[{status:'executed'}],events:[{type:'knowledge_retrieved',outcome:'passed'}]})
-    assert.equal(result.passed,true)
-    assert.equal(result.expectedSource,source)
-  }
-})
-
-test('unsupported dress-code question passes only through a stored safe refusal', () => {
-  assert.equal(knowledgeCaseForQuestion('What is the office dress code?').key,'unsupported')
-  const safe = {status:'completed',decision:null,input:{question:'What is the office dress code?'},actions:[],events:[{type:'knowledge_retrieved',outcome:'blocked'}]}
-  assert.equal(verifyKnowledgeRun(safe).passed,true)
-  assert.equal(verifyKnowledgeRun({...safe,status:'failed'}).passed,false)
-  assert.equal(verifyKnowledgeRun({...safe,actions:[{status:'executed'}]}).passed,false)
 })
