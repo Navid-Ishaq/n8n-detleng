@@ -150,7 +150,14 @@ export function createApp(options = {}) {
     ai: options.aiService ?? createOpenAIService({ apiKey: env.OPENAI_API_KEY, fetchImpl, model: env.OPENAI_MODEL || 'gpt-5-mini', embeddingModel: env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small' }),
     tools: options.tools ?? createControlledTools(),
   }) : null)
-  const reportEmailService = options.reportEmailService ?? (capstoneRepository ? createReportEmailService({ apiKey: env.RESEND_API_KEY, fromEmail: env.REPORT_FROM_EMAIL, archiveEmail: env.REPORT_ARCHIVE_EMAIL || 'info@detleng.com', fetchImpl, repository: capstoneRepository }) : null)
+  const reportEmailService = options.reportEmailService ?? (capstoneRepository ? createReportEmailService({
+    apiKey: env.RESEND_API_KEY,
+    fromEmail: env.REPORT_FROM_EMAIL,
+    archiveEmail: env.REPORT_ARCHIVE_EMAIL || 'info@detleng.com',
+    replyToEmail: env.REPORT_REPLY_TO_EMAIL || 'info@detleng.com',
+    fetchImpl,
+    repository: capstoneRepository,
+  }) : null)
   const app = express()
 
   app.disable('x-powered-by')

@@ -17,13 +17,24 @@ function repositoryDouble() {
 
 const run = { id:'run-1', lessonAttemptNumber:1, scenarioKey:'A', status:'completed', requestType:'support_update', riskLevel:'low', approvalRequired:false, approval:null, actions:[{status:'executed'}], retryCount:0, citations:[] }
 
-test('scenario report goes to learner and DeTLeng copy only once', async () => {
+test('scenario report goes to learner with an archived BCC and reply-to only once', async () => {
   const calls = []; const repository = repositoryDouble()
-  const service = createReportEmailService({ apiKey:'secret', fromEmail:'DeTLeng <reports@detleng.com>', repository, fetchImpl:async (_url, options) => { calls.push(JSON.parse(options.body)); return new Response(JSON.stringify({ id:'email-1' }), { status:200, headers:{'content-type':'application/json'} }) } })
+  const service = createReportEmailService({ apiKey:'secret', fromEmail:'DeTLeng Reports <reports@mail.detleng.com>', archiveEmail:'info@detleng.com', replyToEmail:'info@detleng.com', repository, fetchImpl:async (_url, options) => { calls.push(JSON.parse(options.body)); return new Response(JSON.stringify({ id:'email-1' }), { status:200, headers:{'content-type':'application/json'} }) } })
   const first = await service.sendScenario({ user:{ id:'learner-1', email:'learner@example.com' }, run })
   const second = await service.sendScenario({ user:{ id:'learner-1', email:'learner@example.com' }, run })
   assert.equal(first.status, 'sent'); assert.equal(second.status, 'already_sent'); assert.equal(calls.length, 1)
-  assert.deepEqual(calls[0].to, ['learner@example.com', 'info@detleng.com'])
+  assert.deepEqual(calls[0].to, ['learner@example.com'])
+  assert.equal(calls[0].bcc, 'info@detleng.com')
+  assert.equal(calls[0].reply_to, 'info@detleng.com')
+})
+
+test('archive BCC is omitted when the learner uses the archive address', async () => {
+  const calls = []; const repository = repositoryDouble()
+  const service = createReportEmailService({ apiKey:'secret', fromEmail:'DeTLeng Reports <reports@mail.detleng.com>', archiveEmail:'info@detleng.com', repository, fetchImpl:async (_url, options) => { calls.push(JSON.parse(options.body)); return new Response(JSON.stringify({ id:'email-2' }), { status:200, headers:{'content-type':'application/json'} }) } })
+  const result = await service.sendScenario({ user:{ id:'learner-2', email:'info@detleng.com' }, run })
+  assert.equal(result.status, 'sent')
+  assert.deepEqual(calls[0].to, ['info@detleng.com'])
+  assert.equal('bcc' in calls[0], false)
 })
 
 test('an unconfigured provider reports status without blocking verification', async () => {

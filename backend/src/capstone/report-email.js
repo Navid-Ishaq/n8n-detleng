@@ -14,8 +14,14 @@ const escapeHtml = (value) => String(value ?? '—')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;')
 
-function deliveryRecipients(learnerEmail, archiveEmail) {
-  return [...new Set([learnerEmail, archiveEmail].filter(Boolean).map((email) => email.trim().toLowerCase()))]
+function normalizeEmail(email) {
+  return email?.trim().toLowerCase() || null
+}
+
+function archiveRecipient(learnerEmail, archiveEmail) {
+  const learner = normalizeEmail(learnerEmail)
+  const archive = normalizeEmail(archiveEmail)
+  return archive && archive !== learner ? archive : null
 }
 
 function reportRows(run) {
@@ -40,7 +46,7 @@ function rowsHtml(rows) {
   return `<div style="background:#fff;border:1px solid #e5ded4;border-radius:16px;margin-top:18px;padding:20px">${rows.map(([label, value]) => `<div style="display:flex;gap:16px;border-bottom:1px solid #eee;padding:10px 0"><strong style="width:130px">${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`).join('')}</div>`
 }
 
-export function createReportEmailService({ apiKey, fromEmail, archiveEmail = 'info@detleng.com', fetchImpl = globalThis.fetch, repository }) {
+export function createReportEmailService({ apiKey, fromEmail, archiveEmail = 'info@detleng.com', replyToEmail = 'info@detleng.com', fetchImpl = globalThis.fetch, repository }) {
   const configured = Boolean(apiKey && fromEmail && repository)
 
   async function deliver({ userId, attempt, reportType, scenarioKey = null, runId = null, learnerEmail, subject, html }) {
@@ -61,7 +67,14 @@ export function createReportEmailService({ apiKey, fromEmail, archiveEmail = 'in
           'content-type': 'application/json',
           'idempotency-key': `lesson20-${reportType}-${userId}-${attempt}-${scenarioKey ?? 'final'}`,
         },
-        body: JSON.stringify({ from: fromEmail, to: deliveryRecipients(learnerEmail, archiveEmail), subject, html }),
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [normalizeEmail(learnerEmail)],
+          bcc: archiveRecipient(learnerEmail, archiveEmail) || undefined,
+          reply_to: normalizeEmail(replyToEmail) || undefined,
+          subject,
+          html,
+        }),
         signal: AbortSignal.timeout(10_000),
       })
       const payload = await response.json().catch(() => ({}))
