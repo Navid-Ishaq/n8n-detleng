@@ -9,7 +9,7 @@ const lessonSlugs = [...source.matchAll(/slug:\s*'([^']+)'/g)].map((match) => ma
 
 if (lessonSlugs.length !== 20) throw new Error(`Expected 20 lesson slugs, found ${lessonSlugs.length}`)
 
-const companionRoutes = ['lessons/json-visual-guide']
+const companionRoutes = ['lessons/json-visual-guide', 'lesson-20-operator-guide']
 const routes = ['login', 'signup', 'dashboard', ...lessonSlugs.map((slug) => `lessons/${slug}`), ...companionRoutes]
 for (const route of routes) {
   const routeDirectory = join(dist, ...route.split('/'))

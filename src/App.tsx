@@ -7,12 +7,15 @@ import { safeReturnTo } from './lib/routing'
 import { useAuth } from './context/AuthContext'
 import { Dashboard } from './components/Dashboard'
 import { LessonPage } from './components/LessonPage'
+import { Lesson20OperatorGuide } from './lesson-engine/Lesson20OperatorGuide'
 
 const interactionLabels = { webhook_lab: 'Live lab', self_run: 'Build lab', external_trigger: 'Field test', checklist: 'Ops lab', quiz_project: 'Project lab' }
 
 function lessonHref(slug: string) {
   return `/login?returnTo=${encodeURIComponent(`/lessons/${slug}`)}`
 }
+
+const guideHref = `/login?returnTo=${encodeURIComponent('/lesson-20-operator-guide')}`
 
 export function App() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -22,6 +25,7 @@ export function App() {
   if (loading) return <main className="route-loading"><p>Loading your workspace…</p></main>
   if (path === '/login' || path === '/signup') return user ? <RouteRedirect to={returnTo} label="Opening your workspace…" /> : <AuthPage mode={path === '/login' ? 'login' : 'signup'} returnTo={returnTo} />
   if (path === '/dashboard') return user ? <Dashboard /> : <RouteRedirect to={`/login?returnTo=${encodeURIComponent('/dashboard')}`} label="Taking you to login…" />
+  if (path === '/lesson-20-operator-guide') return user ? <Lesson20OperatorGuide /> : <RouteRedirect to={guideHref} label="Taking you to login…" />
   if (path.startsWith('/lessons/')) return user ? <LessonPage slug={path.slice('/lessons/'.length)} /> : <RouteRedirect to={`/login?returnTo=${encodeURIComponent(`${path}${window.location.search}${window.location.hash}`)}`} label="Taking you to login…" />
   return (
     <div id="top">
@@ -30,7 +34,7 @@ export function App() {
           <a className="brand" href="#top" aria-label="n8n Detleng home"><span className="brand-mark"><Network size={21} /></span><span>n8n <strong>Detleng</strong></span></a>
           <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label="Toggle navigation">{menuOpen ? <X /> : <Menu />}</button>
           <nav className={menuOpen ? 'nav-links is-open' : 'nav-links'} aria-label="Main navigation">
-            <a href="#curriculum">Curriculum</a><a href="#method">How it works</a><a href="#capstones">Capstones</a>
+            <a href="#curriculum">Curriculum</a><a href={guideHref}>Lesson 20 Operator Guide</a><a href="#method">How it works</a><a href="#capstones">Capstones</a>
             <a className="button button--ghost" href="/login">Log in</a><a className="button button--dark" href="/signup">Start learning <ArrowRight size={17} /></a>
           </nav>
         </div>
@@ -55,7 +59,7 @@ export function App() {
 
         <section className="proof-strip"><div className="shell proof-grid"><div><strong>20</strong><span>Focused lessons</span></div><div><strong>4</strong><span>Engineering levels</span></div><div><strong>4</strong><span>Portfolio capstones</span></div><div><strong>1</strong><span>Job-ready learning path</span></div></div></section>
 
-        <section className="live-lessons shell"><div><p className="eyebrow">3 live lessons ready</p><h2>Start with fundamentals—or enter the flagship preview.</h2><p>Lessons 01 and 02 teach workflow movement and data shape. Lesson 20 is a live portfolio capstone. Lessons 03–19 remain clearly marked as the planned roadmap.</p></div><a className="button button--dark" href={lessonHref('monitoring-security-approval')}>Open flagship capstone <ArrowRight size={17}/></a></section>
+        <section className="live-lessons flagship-entry shell"><div><p className="eyebrow">3 live lessons ready · Lesson 20 flagship experience</p><h2>Understand the system—then operate it.</h2><p>Start with a complete interactive guide to AI, RAG, rules, approval, evidence and monitoring. Or enter the authenticated live capstone directly.</p><div className="flagship-entry-points"><span><Check/> 32 guided learning steps</span><span><Check/> 29 decision labs</span><span><Check/> Real live-lab hand-off</span></div></div><div className="flagship-entry-actions"><a className="button button--primary" href={guideHref}>Start with the Lesson 20 Operator Guide <ArrowRight size={17}/></a><a className="button button--light" href={lessonHref('monitoring-security-approval')}>Go directly to Lesson 20</a></div></section>
 
         <section className="section shell" id="curriculum">
           <div className="section-heading"><div><p className="eyebrow">The learning path</p><h2>Four levels. One complete engineering journey.</h2></div><p>Move from reliable workflow fundamentals to AI systems you can deploy, monitor and explain.</p></div>

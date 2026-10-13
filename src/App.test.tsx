@@ -26,6 +26,14 @@ describe('public learning experience', () => {
     expect(lessonLink).toHaveAttribute('href', '/login?returnTo=%2Flessons%2Fwebhooks')
   })
 
+  it('promotes the protected Lesson 20 Operator Guide', () => {
+    render(<App />)
+    const guideLinks = screen.getAllByRole('link', { name: /Lesson 20 Operator Guide/i })
+    expect(guideLinks.length).toBeGreaterThan(0)
+    expect(guideLinks[0]).toHaveAttribute('href', '/login?returnTo=%2Flesson-20-operator-guide')
+    expect(screen.getByText(/32 guided learning steps/i)).toBeInTheDocument()
+  })
+
   it('preserves a safe return route and rejects external redirects', () => {
     expect(safeReturnTo('?returnTo=%2Flessons%2Fn8n-core')).toBe('/lessons/n8n-core')
     expect(safeReturnTo('?returnTo=https%3A%2F%2Fevil.example')).toBe('/dashboard')
@@ -61,6 +69,13 @@ describe('public learning experience', () => {
 
   it('protects the direct Lesson 20 flagship route', () => {
     window.history.pushState({}, '', '/lessons/monitoring-security-approval')
+    render(<App />)
+    expect(screen.getByText(/Taking you to login/i)).toBeInTheDocument()
+    window.history.pushState({}, '', '/')
+  })
+
+  it('protects the direct Lesson 20 Operator Guide route', () => {
+    window.history.pushState({}, '', '/lesson-20-operator-guide')
     render(<App />)
     expect(screen.getByText(/Taking you to login/i)).toBeInTheDocument()
     window.history.pushState({}, '', '/')
