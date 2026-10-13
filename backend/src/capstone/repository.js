@@ -69,6 +69,21 @@ export function createCapstoneRepository(supabase) {
       const rows = data ?? []; const completed = rows.filter((r) => r.status === 'completed')
       return { totalRuns: rows.length, successful: completed.length, pendingApprovals: rows.filter((r) => r.status === 'pending_approval').length, rejected: rows.filter((r) => r.status === 'rejected').length, handledFailures: rows.filter((r) => r.status === 'handled_failure' || r.retry_count > 0).length, averageDurationMs: completed.length ? Math.round(completed.reduce((sum, row) => sum + (row.duration_ms ?? 0), 0) / completed.length) : 0 }
     },
+    async getReportDelivery(userId, attempt, reportType, scenarioKey) {
+      let query = supabase.from('capstone_report_deliveries').select('*').eq('user_id', userId).eq('lesson_attempt_number', attempt).eq('report_type', reportType)
+      query = scenarioKey ? query.eq('scenario_key', scenarioKey) : query.is('scenario_key', null)
+      const { data, error } = await query.maybeSingle(); throwIf(error); return data
+    },
+    async claimReportDelivery({ userId, attempt, reportType, scenarioKey, runId, recipientEmail }) {
+      const { data, error } = await supabase.from('capstone_report_deliveries').upsert({ user_id: userId, lesson_attempt_number: attempt, report_type: reportType, scenario_key: scenarioKey, run_id: runId, recipient_email: recipientEmail, status: 'pending', error_message: null, updated_at: new Date().toISOString() }, { onConflict: 'user_id,lesson_attempt_number,report_type,scenario_key', ignoreDuplicates: true }).select('*').maybeSingle()
+      throwIf(error); return data ?? this.getReportDelivery(userId, attempt, reportType, scenarioKey)
+    },
+    async completeReportDelivery(id, providerMessageId) {
+      const { error } = await supabase.from('capstone_report_deliveries').update({ status: 'sent', provider_message_id: providerMessageId, sent_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id); throwIf(error)
+    },
+    async failReportDelivery(id, message) {
+      const { error } = await supabase.from('capstone_report_deliveries').update({ status: 'failed', error_message: String(message).slice(0, 500), updated_at: new Date().toISOString() }).eq('id', id); throwIf(error)
+    },
   }
 }
 

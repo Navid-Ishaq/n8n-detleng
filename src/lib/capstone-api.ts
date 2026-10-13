@@ -10,6 +10,7 @@ export type CapstoneRun = {
   events:CapstoneEvent[]; actions:{type:string;status:string;receipt:string|null;executedAt:string|null}[]
 }
 export type Monitoring = { totalRuns:number; successful:number; pendingApprovals:number; rejected:number; handledFailures:number; averageDurationMs:number }
+export type ReportDelivery = { status:'sent'|'already_sent'|'failed'|'not_configured'|'no_recipient'|'not_sent'; messageId?:string|null }
 
 async function request<T>(path:string, session:Session|null, init:RequestInit={}) {
   if (!apiBaseUrl) throw new Error('The live capstone API is not configured.')
@@ -25,7 +26,8 @@ export const capstoneApi = {
   get:(session:Session|null,id:string)=>request<{run:CapstoneRun}>(`/api/lessons/production-capstone/runs/${id}`,session),
   list:(session:Session|null,attempt:number)=>request<{runs:CapstoneRun[]}>(`/api/lessons/production-capstone/attempts/${attempt}/runs`,session),
   decide:(session:Session|null,id:string,decision:'approve'|'reject')=>request<{run:CapstoneRun}>(`/api/lessons/production-capstone/runs/${id}/${decision}`,session,{method:'POST',body:'{}'}),
-  verify:(session:Session|null,id:string)=>request<{verification:{passed:boolean;scenarioKey:string}}>(`/api/lessons/production-capstone/runs/${id}/verify`,session,{method:'POST',body:'{}'}),
+  verify:(session:Session|null,id:string)=>request<{verification:{passed:boolean;scenarioKey:string;reportDelivery:ReportDelivery}}>(`/api/lessons/production-capstone/runs/${id}/verify`,session,{method:'POST',body:'{}'}),
+  finalReport:(session:Session|null,attempt:number)=>request<{reportDelivery:ReportDelivery}>(`/api/lessons/production-capstone/attempts/${attempt}/final-report`,session,{method:'POST',body:'{}'}),
   monitoring:(session:Session|null)=>request<{monitoring:Monitoring}>('/api/lessons/production-capstone/monitoring',session),
   seed:(session:Session|null)=>request<{embedded:number;message:string}>('/api/lessons/production-capstone/knowledge/seed',session,{method:'POST',body:'{}'}),
 }

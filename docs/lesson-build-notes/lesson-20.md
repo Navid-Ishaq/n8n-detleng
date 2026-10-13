@@ -55,3 +55,5 @@ The backend implements narrow internal tools: `lookup_customer`, `lookup_policy`
 ## Deployment step
 
 Apply `supabase/migrations/202610110001_lesson20_capstone.sql` once in the Supabase SQL Editor. Render must already contain `OPENAI_API_KEY` and `SUPABASE_SECRET_KEY`; no secret belongs in Git or frontend JavaScript.
+
+For automatic execution reports, also apply `supabase/migrations/202610130001_lesson20_email_reports.sql`. Configure Render with `RESEND_API_KEY`, a verified `REPORT_FROM_EMAIL`, and `REPORT_ARCHIVE_EMAIL=info@detleng.com`. Each successful scenario verification sends one report to the authenticated Supabase login email and the DeTLeng archive address; lesson completion sends one consolidated report. Delivery records and provider idempotency keys prevent duplicate sends, and a provider failure never reverses verified evidence or lesson completion.

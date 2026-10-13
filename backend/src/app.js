@@ -7,6 +7,7 @@ import { createOpenAIService } from './capstone/openai.js'
 import { createControlledTools } from './capstone/tools.js'
 import { createCapstoneRepository } from './capstone/repository.js'
 import { createCapstoneService } from './capstone/service.js'
+import { createReportEmailService } from './capstone/report-email.js'
 
 const TEST_CASES = [
   { id: 'high', label: 'High Priority', input: { customerName: 'Ali Khan', department: 'Support', priority: 'high', budget: 1500 }, expected: { route: 'escalated', status: 'ready' } },
@@ -143,11 +144,13 @@ export function createApp(options = {}) {
   const supabase = options.supabase ?? createClient(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   })
-  const capstoneService = options.capstoneService ?? (env.SUPABASE_SECRET_KEY && env.OPENAI_API_KEY ? createCapstoneService({
-    repository: createCapstoneRepository(options.adminSupabase ?? createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { autoRefreshToken: false, persistSession: false } })),
+  const capstoneRepository = options.capstoneRepository ?? (env.SUPABASE_SECRET_KEY ? createCapstoneRepository(options.adminSupabase ?? createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { autoRefreshToken: false, persistSession: false } })) : null)
+  const capstoneService = options.capstoneService ?? (capstoneRepository && env.OPENAI_API_KEY ? createCapstoneService({
+    repository: capstoneRepository,
     ai: options.aiService ?? createOpenAIService({ apiKey: env.OPENAI_API_KEY, fetchImpl, model: env.OPENAI_MODEL || 'gpt-5-mini', embeddingModel: env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small' }),
     tools: options.tools ?? createControlledTools(),
   }) : null)
+  const reportEmailService = options.reportEmailService ?? (capstoneRepository ? createReportEmailService({ apiKey: env.RESEND_API_KEY, fromEmail: env.REPORT_FROM_EMAIL, archiveEmail: env.REPORT_ARCHIVE_EMAIL || 'info@detleng.com', fetchImpl, repository: capstoneRepository }) : null)
   const app = express()
 
   app.disable('x-powered-by')
@@ -314,8 +317,42 @@ export function createApp(options = {}) {
 
   app.post('/api/lessons/production-capstone/runs/:runId/verify', capstoneMutationLimiter, async (request, response) => {
     const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
-    try { const verification = await capstoneService.verify(user.id, request.params.runId); return verification ? response.json({ verification }) : response.status(404).json({ error: 'Run not found.' }) }
+    try {
+      const verification = await capstoneService.verify(user.id, request.params.runId)
+      if (!verification) return response.status(404).json({ error: 'Run not found.' })
+      let reportDelivery = { status: 'not_sent' }
+      if (verification.passed) {
+        try {
+          const run = await capstoneService.get(user.id, request.params.runId)
+          reportDelivery = reportEmailService && run ? await reportEmailService.sendScenario({ user, run }) : { status: 'not_configured' }
+        } catch { reportDelivery = { status: 'failed' } }
+      }
+      return response.json({ verification: { ...verification, reportDelivery } })
+    }
     catch { return response.status(500).json({ error: 'Verification could not be completed.' }) }
+  })
+
+  app.post('/api/lessons/production-capstone/attempts/:attempt/final-report', capstoneMutationLimiter, async (request, response) => {
+    const user = await authenticate(request, response); if (!user || !requireCapstone(response)) return
+    const attempt = Number(request.params.attempt); if (!Number.isInteger(attempt) || attempt < 1) return response.status(400).json({ error: 'Invalid attempt.' })
+    try {
+      const runs = await capstoneService.list(user.id, attempt)
+      const verifiedRuns = []
+      for (const scenarioKey of ['A', 'B', 'C', 'D', 'E', 'F']) {
+        const candidates = runs.filter((run) => run.scenarioKey === scenarioKey)
+        let accepted = null
+        for (const candidate of candidates) {
+          const verification = await capstoneService.verify(user.id, candidate.id)
+          if (verification?.passed) { accepted = candidate; break }
+        }
+        if (!accepted) return response.status(409).json({ error: `Scenario ${scenarioKey} has not been verified from stored evidence.` })
+        verifiedRuns.push(accepted)
+      }
+      let reportDelivery
+      try { reportDelivery = reportEmailService ? await reportEmailService.sendFinal({ user, attempt, runs: verifiedRuns }) : { status: 'not_configured' } }
+      catch { reportDelivery = { status: 'failed' } }
+      return response.json({ reportDelivery })
+    } catch { return response.status(500).json({ error: 'The final execution report could not be prepared.' }) }
   })
 
   app.get('/api/lessons/production-capstone/monitoring', capstoneReadLimiter, async (request, response) => {
