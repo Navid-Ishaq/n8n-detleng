@@ -22,7 +22,7 @@ export function App() {
   const { loading, user } = useAuth()
   const path = window.location.pathname.replace(/\/+$/, '') || '/'
   const returnTo = safeReturnTo(window.location.search)
-  if (loading) return <main className="route-loading"><p>Loading your workspace…</p></main>
+  if (loading && path !== '/') return <main className="route-loading"><p>Loading your workspace…</p></main>
   if (path === '/login' || path === '/signup') return user ? <RouteRedirect to={returnTo} label="Opening your workspace…" /> : <AuthPage mode={path === '/login' ? 'login' : 'signup'} returnTo={returnTo} />
   if (path === '/dashboard') return user ? <Dashboard /> : <RouteRedirect to={`/login?returnTo=${encodeURIComponent('/dashboard')}`} label="Taking you to login…" />
   if (path === '/lesson-20-operator-guide') return user ? <Lesson20OperatorGuide /> : <RouteRedirect to={guideHref} label="Taking you to login…" />
